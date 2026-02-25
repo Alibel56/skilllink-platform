@@ -13,11 +13,6 @@ from backend.app.services.h3_service import H3Service
 
 router = APIRouter()
 
-
-# =========================================================
-# Schemas
-# =========================================================
-
 class H3ZoneResponse(BaseModel):
     h3_index: str
     h3_resolution: int
@@ -50,21 +45,12 @@ class H3NearbyStatsResponse(BaseModel):
     avg_price_in_area: float
 
 
-# =========================================================
-# H3 Zone Stats — агрегация
-# =========================================================
-
 @router.get("/h3/stats", response_model=List[H3ZoneResponse])
 def get_h3_zone_stats(
     limit: int = Query(50, le=200),
     min_orders: int = Query(0, ge=0),
     db: Session = Depends(get_db),
 ):
-    """
-    Агрегированная статистика по H3 зонам.
-    Показывает количество заказов, среднюю цену и активных специалистов
-    по каждой гексагональной ячейке.
-    """
     query = db.query(H3ZoneStats)
 
     if min_orders > 0:
@@ -85,27 +71,16 @@ def get_h3_nearby_stats(
     radius: int = Query(1, ge=1, le=5, description="k-ring радиус"),
     db: Session = Depends(get_db),
 ):
-    """
-    Агрегированная статистика по H3 зонам вокруг заданной точки.
-    Демонстрирует H3 query + filter + aggregation одновременно:
-    - query: конвертация координат в H3 индекс
-    - filter: выборка зон по k-ring соседям
-    - aggregation: суммирование метрик по всем зонам в радиусе
-    """
-    # H3 query: конвертируем координаты в H3
     center_h3 = H3Service.geo_to_h3(lat, lon)
 
-    # H3 filter: получаем все соседние ячейки
     neighbor_cells = H3Service.get_neighbors(center_h3, radius)
 
-    # H3 aggregation: собираем статистику по всем ячейкам в радиусе
     zones = (
         db.query(H3ZoneStats)
         .filter(H3ZoneStats.h3_index.in_(neighbor_cells))
         .all()
     )
 
-    # Считаем специалистов в зоне
     specialists_count = (
         db.query(func.count(Specialist.id))
         .filter(Specialist.h3_index.in_(neighbor_cells))
@@ -133,7 +108,7 @@ def get_zone_by_index(
     h3_index: str,
     db: Session = Depends(get_db),
 ):
-    """Получить статистику конкретной H3 ячейки по её индексу."""
+
     if not H3Service.validate_h3(h3_index):
         raise HTTPException(status_code=400, detail="Invalid H3 index")
 
@@ -143,11 +118,6 @@ def get_zone_by_index(
 
     return zone
 
-
-# =========================================================
-# Event Queue — просмотр для демо
-# =========================================================
-
 @router.get("/events", response_model=List[dict])
 def get_events(
     limit: int = Query(20, le=100),
@@ -155,10 +125,6 @@ def get_events(
     db: Session = Depends(get_db),
     _=Depends(require_role([UserRole.admin, UserRole.regulator])),
 ):
-    """
-    Просмотр очереди событий (event-driven log).
-    Показывает все события: ORDER_CREATED и их статус обработки.
-    """
     query = db.query(EventQueue)
 
     if status:

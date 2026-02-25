@@ -19,7 +19,6 @@ def create_order(
     db: Session = Depends(get_db),
     user=Depends(require_role([UserRole.client])),
 ):
-    """Создать заказ (только client)."""
     order = OrderService.create_order(db, user.id, data)
 
     AuditService.log_action(
@@ -62,12 +61,10 @@ def update_order_status(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    """Обновить статус заказа (специалист или admin)."""
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    # Только специалист назначенный на заказ или admin
     if current_user.role != UserRole.admin and order.specialist_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 

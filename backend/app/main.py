@@ -19,7 +19,6 @@ logger = logging.getLogger("gig-platform")
 
 
 async def event_loop_task():
-    """Фоновый обработчик событий. Запускается каждые 5 секунд."""
     while True:
         db = SessionLocal()
         try:

@@ -49,7 +49,6 @@ class EventWorker:
 
         zone.total_orders += 1
 
-        # обновление среднего
         zone.avg_price = (
             (zone.avg_price * (zone.total_orders - 1) + price)
             / zone.total_orders

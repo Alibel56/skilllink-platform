@@ -13,7 +13,6 @@ router = APIRouter()
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
-    """Профиль текущего пользователя."""
     return current_user
 
 
@@ -23,7 +22,6 @@ def get_user(
     db: Session = Depends(get_db),
     _=Depends(require_role([UserRole.admin, UserRole.regulator])),
 ):
-    """Получить пользователя по ID (только admin/regulator)."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -37,7 +35,6 @@ def deactivate_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Деактивировать пользователя (admin или сам пользователь)."""
     if current_user.role != UserRole.admin and current_user.id != user_id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
@@ -67,7 +64,6 @@ def activate_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role([UserRole.admin])),
 ):
-    """Реактивировать деактивированного пользователя (только admin)."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

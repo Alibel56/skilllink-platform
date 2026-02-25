@@ -20,7 +20,6 @@ def get_specialists_nearby(
     radius: int = Query(1, ge=1, le=5),
     db: Session = Depends(get_db),
 ):
-    """Найти специалистов рядом по координатам."""
     return SearchService.find_specialists_nearby(db, lat, lon, radius)
 
 
@@ -31,7 +30,6 @@ def create_specialist(
     db: Session = Depends(get_db),
     current_user=Depends(require_role([UserRole.specialist])),
 ):
-    """Создать профиль специалиста (только для роли specialist)."""
     existing = db.query(Specialist).filter(Specialist.user_id == current_user.id).first()
     if existing:
         raise HTTPException(status_code=400, detail="Specialist profile already exists")
@@ -52,7 +50,6 @@ def create_specialist(
 
 @router.get("/{specialist_id}", response_model=SpecialistResponse)
 def get_specialist(specialist_id: UUID, db: Session = Depends(get_db)):
-    """Получить профиль специалиста по ID."""
     specialist = db.query(Specialist).filter(Specialist.id == specialist_id).first()
     if not specialist:
         raise HTTPException(status_code=404, detail="Specialist not found")
@@ -66,7 +63,6 @@ def verify_specialist(
     db: Session = Depends(get_db),
     current_user=Depends(require_role([UserRole.admin])),
 ):
-    """Верифицировать специалиста (только admin). После этого он появляется в поиске."""
     specialist = db.query(Specialist).filter(Specialist.id == specialist_id).first()
     if not specialist:
         raise HTTPException(status_code=404, detail="Specialist not found")
@@ -98,7 +94,6 @@ def update_specialist(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    """Обновить профиль специалиста (сам специалист или admin)."""
     specialist = db.query(Specialist).filter(Specialist.id == specialist_id).first()
     if not specialist:
         raise HTTPException(status_code=404, detail="Specialist not found")
@@ -108,7 +103,6 @@ def update_specialist(
 
     update_data = data.model_dump(exclude_unset=True)
 
-    # Если обновились координаты — пересчитать h3_index
     if "lat" in update_data or "lon" in update_data:
         from backend.app.services.h3_service import H3Service
         lat = update_data.get("lat", specialist.lat)
