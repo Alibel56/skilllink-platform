@@ -1,64 +1,39 @@
+from datetime import datetime, timezone
+from typing import Optional, TYPE_CHECKING
 import uuid
-from sqlalchemy import String, Float, DateTime, ForeignKey, Enum, Text, Index
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.sql import func
 
-from backend.app.db.base import Base
+from sqlalchemy import DateTime
+from sqlmodel import SQLModel, Field, Relationship
+
 from backend.app.db.models.enums import OrderStatus
+if TYPE_CHECKING:
+    from backend.app.db.models.user import User
+    from backend.app.db.models.specialist import Specialist
+    from backend.app.db.models.message import Message
 
+class Order(SQLModel, table=True):
+    __tablename__ = "order"
 
-class Order(Base):
-    __tablename__ = "orders"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(foreign_key="users.id")
+    specialist_id: Optional[uuid.UUID] = Field(default=None, foreign_key="specialist.id")  # nullable, clients create order by themselves
+    job_type: str
+    description: Optional[str] = None
+    price: float
+    is_active: bool = Field(default=True)
+    status: OrderStatus = Field(default=OrderStatus.open)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_type=DateTime(timezone=True),
+        nullable=False
     )
-
-    client_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
+    completed_at: Optional[datetime] = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_type=DateTime(timezone=True),
         nullable=False
     )
 
-    specialist_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("specialists.id", ondelete="CASCADE"),
-        nullable=False
-    )
-
-    service_type: Mapped[str] = mapped_column(String(100), nullable=False)
-
-    status: Mapped[OrderStatus] = mapped_column(
-        Enum(OrderStatus, name="order_status_enum"),
-        nullable=False,
-        default=OrderStatus.pending
-    )
-
-    lat: Mapped[float | None] = mapped_column(Float)
-    lon: Mapped[float | None] = mapped_column(Float)
-
-    h3_index: Mapped[str | None] = mapped_column(String(32))
-
-    price: Mapped[float | None] = mapped_column(Float)
-    description: Mapped[str | None] = mapped_column(Text)
-
-    created_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now()
-    )
-
-    updated_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now()
-    )
-
-    client = relationship("User", back_populates="orders", foreign_keys=[client_id])
-    specialist = relationship("Specialist", back_populates="orders")
-
-    __table_args__ = (
-        Index("idx_order_h3", "h3_index"),
-    )
+    # Relationships
+    user: Optional[User] = Relationship(back_populates="orders", sa_relationship_kwargs={"lazy": "selectin"})
+    specialist: Optional[Specialist] = Relationship(back_populates="orders", sa_relationship_kwargs={"lazy": "selectin"})
+    messages: list["Message"] = Relationship(back_populates="order", sa_relationship_kwargs={"lazy": "selectin"})

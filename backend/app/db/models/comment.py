@@ -1,0 +1,29 @@
+from datetime import datetime, timezone
+from typing import Optional, TYPE_CHECKING
+import uuid
+
+from sqlalchemy import UniqueConstraint, DateTime
+from sqlmodel import SQLModel, Field, Relationship
+
+if TYPE_CHECKING:
+    from backend.app.db.models.user import User
+    from backend.app.db.models.specialist import Specialist
+
+class Comment(SQLModel, table=True):
+    __tablename__ = "comments"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(foreign_key="users.id")
+    specialist_id: uuid.UUID = Field(foreign_key="specialist.id")
+    comment: str
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_type=DateTime(timezone=True),
+        nullable=False
+    )
+
+    # Relationships
+    user: Optional[User] = Relationship(back_populates="comments", sa_relationship_kwargs={"lazy": "selectin"})
+    specialist: Optional[Specialist] = Relationship(back_populates="comments", sa_relationship_kwargs={"lazy": "selectin"})
+
+    __table_args__ = (UniqueConstraint("user_id", "specialist_id"),)

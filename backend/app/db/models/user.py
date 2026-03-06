@@ -1,39 +1,43 @@
+from datetime import datetime, date, timezone
+from typing import TYPE_CHECKING
+from typing import Optional
 import uuid
-from sqlalchemy import String, Boolean, DateTime, Enum
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.sql import func
 
-from backend.app.db.base import Base
+from sqlalchemy import DateTime
+from sqlmodel import SQLModel, Field, Relationship
+
 from backend.app.db.models.enums import UserRole
+if TYPE_CHECKING:
+    from backend.app.db.models.address import Address
+    from backend.app.db.models.specialist import Specialist
+    from backend.app.db.models.order import Order
+    from backend.app.db.models.rate import Rate
+    from backend.app.db.models.comment import Comment
+    from backend.app.db.models.auditLog import AuditLog
+    from backend.app.db.models.message import Message
 
-
-class User(Base):
+class User(SQLModel, table=True):
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4
-    )
-
-    username: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-
-    role: Mapped[UserRole] = mapped_column(
-        Enum(UserRole, name="user_role_enum"),
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    role: UserRole = Field(default=UserRole.client)
+    name: str
+    surname: str
+    birth_date: date
+    phone: str = Field(unique=True)
+    email: str = Field(unique=True)
+    hashed_password: str
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_type=DateTime(timezone=True),
         nullable=False
     )
 
-    email: Mapped[str | None] = mapped_column(String(255))
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-
-    created_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now()
-    )
-
-    # relationships
-    specialist_profile = relationship("Specialist", back_populates="user", uselist=False)
-    orders = relationship("Order", back_populates="client", foreign_keys="Order.client_id")
-    audit_logs = relationship("AuditLog", back_populates="user")
+    # Relationships
+    address: Optional["Address"] = Relationship(back_populates="user", sa_relationship_kwargs={"lazy": "selectin"})
+    specialist: Optional["Specialist"] = Relationship(back_populates="user", sa_relationship_kwargs={"lazy": "selectin"})
+    orders: list["Order"] = Relationship(back_populates="user", sa_relationship_kwargs={"lazy": "selectin"})
+    rates: list["Rate"] = Relationship(back_populates="user", sa_relationship_kwargs={"lazy": "selectin"})
+    comments: list["Comment"] = Relationship(back_populates="user", sa_relationship_kwargs={"lazy": "selectin"})
+    audit_logs: list["AuditLog"] = Relationship(back_populates="user", sa_relationship_kwargs={"lazy": "selectin"})
+    messages: list["Message"] = Relationship(back_populates="sender", sa_relationship_kwargs={"lazy": "selectin"})

@@ -1,86 +1,48 @@
-import asyncio
-import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI
 
-from backend.app.api.v1 import auth, users, specialists, orders, audit, analytics
-from backend.app.db.session import SessionLocal
-from backend.app.services.event_worker import EventWorker
+from backend.app.db.session import engine
+import backend.app.db.models
+from sqlmodel import SQLModel
 
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-)
-logger = logging.getLogger("gig-platform")
-
-
-async def event_loop_task():
-    while True:
-        db = SessionLocal()
-        try:
-            EventWorker.process_events(db)
-        except Exception as e:
-            logger.error(f"Event worker error: {e}")
-        finally:
-            db.close()
-        await asyncio.sleep(5)
+from backend.app.api.v1.UserRouter import router as user_router
+from backend.app.api.v1.SpecialistRouter import router as specialist_router
+from backend.app.api.v1.OrderRouter import router as order_router
+from backend.app.api.v1.CatalogRouter import router as catalog_router
+from backend.app.api.v1.RateRouter import router as rate_router
+from backend.app.api.v1.CommentRouter import router as comment_router
+from backend.app.api.v1.AddressRouter import router as address_router
+from backend.app.api.v1.AccreditationRouter import router as accreditation_router
+from backend.app.api.v1.MessageRouter import router as message_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting Gig Platform API...")
-    task = asyncio.create_task(event_loop_task())
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
     yield
-    logger.info("Shutting down Gig Platform API...")
-    task.cancel()
-    try:
-        await task
-    except asyncio.CancelledError:
-        pass
+    await engine.dispose()
 
 
 app = FastAPI(
-    title="Gig Platform API",
-    description="H3-powered gig economy platform with RBAC, event-driven analytics, and audit logging.",
+    title="SkillLink API",
+    description="Platform connecting clients with specialists",
     version="1.0.0",
-    lifespan=lifespan,
+    lifespan=lifespan
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Routers
-app.include_router(auth.router,        prefix="/api/v1/auth",        tags=["Auth"])
-app.include_router(users.router,       prefix="/api/v1/users",       tags=["Users"])
-app.include_router(specialists.router, prefix="/api/v1/specialists", tags=["Specialists"])
-app.include_router(orders.router,      prefix="/api/v1/orders",      tags=["Orders"])
-app.include_router(audit.router,       prefix="/api/v1/audit",       tags=["Audit"])
-app.include_router(analytics.router,   prefix="/api/v1/analytics",   tags=["Analytics & H3"])
+app.include_router(user_router,         prefix="/api/v1")
+app.include_router(specialist_router,   prefix="/api/v1")
+app.include_router(order_router,        prefix="/api/v1")
+app.include_router(catalog_router,      prefix="/api/v1")
+app.include_router(rate_router,         prefix="/api/v1")
+app.include_router(comment_router,      prefix="/api/v1")
+app.include_router(address_router,      prefix="/api/v1")
+app.include_router(accreditation_router, prefix="/api/v1")
+app.include_router(message_router,      prefix="/api/v1")
 
 
-@app.get("/", tags=["System"])
-def root():
-    return {"service": "Gig Platform API", "status": "running", "version": "1.0.0"}
-
-
-@app.get("/health", tags=["System"])
-def health_check():
-    return {"status": "ok"}
-
-
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled error: {exc}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error"},
-    )
+@app.get("/", tags=["Health"])
+async def health_check():
+    return {"status": "ok", "app": "SkillLink API"}
