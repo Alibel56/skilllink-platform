@@ -9,7 +9,7 @@ from backend.app.core.dependencies import (
     require_specialist,
     require_client
 )
-from backend.app.db.models.enums import AuditAction
+from backend.app.db.models.enums import ServiceType,LogType
 from backend.app.db.models.user import User
 from backend.app.db.session import get_session
 from backend.app.schemas.SpecialistSchema import SpecialistCreate, SpecialistUpdate, SpecialistDto
@@ -24,7 +24,7 @@ router = APIRouter(
 # =========================
 # CREATE SPECIALIST
 # =========================
-@router.post("/", response_model=SpecialistDto)
+@router.post("/create", response_model=SpecialistDto)
 async def create_specialist(
     request: Request,
     data: SpecialistCreate,
@@ -40,9 +40,9 @@ async def create_specialist(
     await AuditService.log(
         session=session,
         user_id=current_user.id,
-        action=AuditAction.SPECIALIST_CREATED,
-        detail=f"Specialist profile created {specialist.id}",
-        ip_address=request.client.host
+        log_type=LogType.INFO,
+        service=ServiceType.SPECIALIST,
+        detail=f"{request.client.host} - POST - /create - 200"
     )
 
     return specialist
@@ -50,22 +50,31 @@ async def create_specialist(
 # =========================
 # GET SPECIALIST BY ID
 # =========================
-@router.get("/{specialist_id}", response_model=SpecialistDto)
+@router.get("/get/{specialist_id}", response_model=SpecialistDto)
 async def get_specialist(
     specialist_id: uuid.UUID,
     request: Request,
     session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(require_client)
 ):
     specialist = await SpecialistService.get_by_id(session, specialist_id)
 
     if not specialist:
+        await AuditService.log(
+            session=session,
+            user_id=current_user.id,
+            log_type=LogType.ERROR,
+            service=ServiceType.SPECIALIST,
+            detail=f"{request.client.host} - GET - /get/{specialist_id} - 404 - specialist not found"
+        )
         raise HTTPException(status_code=404, detail="Specialist not found")
 
     await AuditService.log(
         session=session,
-        action=AuditAction.GET_SPECIALIST,
-        detail=f"Requested specialist {specialist_id}",
-        ip_address=request.client.host
+        user_id=current_user.id,
+        log_type=LogType.INFO,
+        service=ServiceType.SPECIALIST,
+        detail=f"{request.client.host} - GET - /get/{specialist_id} - 200"
     )
 
     return specialist
@@ -74,7 +83,7 @@ async def get_specialist(
 # =========================
 # UPDATE SPECIALIST
 # =========================
-@router.put("/{specialist_id}", response_model=SpecialistDto)
+@router.put("/update/{specialist_id}", response_model=SpecialistDto)
 async def update_specialist(
     specialist_id: uuid.UUID,
     data: SpecialistUpdate,
@@ -85,19 +94,33 @@ async def update_specialist(
     specialist = await SpecialistService.get_by_id(session, specialist_id)
 
     if not specialist:
+        await AuditService.log(
+            session=session,
+            user_id=current_user.id,
+            log_type=LogType.ERROR,
+            service=ServiceType.SPECIALIST,
+            detail=f"{request.client.host} - PUT - /update/{specialist_id} - 404 - specialist not found"
+        )
         raise HTTPException(status_code=404, detail="Specialist not found")
 
-    if specialist.user_id != current_user.id and current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Not allowed")
+    if specialist.user_id != current_user.id:
+        await AuditService.log(
+            session=session,
+            user_id=current_user.id,
+            log_type=LogType.ERROR,
+            service=ServiceType.SPECIALIST,
+            detail=f"{request.client.host} - PUT - /update/{specialist_id} - 403 - not allowed to update"
+        )
+        raise HTTPException(status_code=403, detail="Not allowed to update")
 
     updated_specialist = await SpecialistService.update(session, specialist, data)
 
     await AuditService.log(
         session=session,
         user_id=current_user.id,
-        action=AuditAction.SPECIALIST_UPDATED,
-        detail=f"Updated specialist {specialist_id}",
-        ip_address=request.client.host
+        log_type=LogType.INFO,
+        service=ServiceType.SPECIALIST,
+        detail=f"{request.client.host} - PUT - /update/{specialist_id} - 200"
     )
 
     return updated_specialist
@@ -106,7 +129,7 @@ async def update_specialist(
 # =========================
 # DEACTIVATE SPECIALIST
 # =========================
-@router.patch("/{specialist_id}/deactivate", response_model=SpecialistDto)
+@router.patch("/deactivate/{specialist_id}", response_model=SpecialistDto)
 async def deactivate_specialist(
     specialist_id: uuid.UUID,
     request: Request,
@@ -116,19 +139,33 @@ async def deactivate_specialist(
     specialist = await SpecialistService.get_by_id(session, specialist_id)
 
     if not specialist:
+        await AuditService.log(
+            session=session,
+            user_id=current_user.id,
+            log_type=LogType.ERROR,
+            service=ServiceType.SPECIALIST,
+            detail=f"{request.client.host} - PATCH - /deactivate/{specialist_id} - 404 - specialist not found"
+        )
         raise HTTPException(status_code=404, detail="Specialist not found")
 
-    if specialist.user_id != current_user.id and current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Not allowed")
+    if specialist.user_id != current_user.id:
+        await AuditService.log(
+            session=session,
+            user_id=current_user.id,
+            log_type=LogType.ERROR,
+            service=ServiceType.SPECIALIST,
+            detail=f"{request.client.host} - PATCH - /deactivate/{specialist_id} - 403 - not allowed to deactivate"
+        )
+        raise HTTPException(status_code=403, detail="Not allowed to deactivate")
 
     result = await SpecialistService.deactivate(session, specialist)
 
     await AuditService.log(
         session=session,
         user_id=current_user.id,
-        action=AuditAction.SPECIALIST_DEACTIVATED,
-        detail=f"Deactivated specialist {specialist_id}",
-        ip_address=request.client.host
+        log_type=LogType.INFO,
+        service=ServiceType.SPECIALIST,
+        detail=f"{request.client.host} - PATCH - /deactivate/{specialist_id} - 200"
     )
 
     return result
@@ -137,7 +174,7 @@ async def deactivate_specialist(
 # =========================
 # DELETE SPECIALIST
 # =========================
-@router.delete("/{specialist_id}")
+@router.delete("/delete/{specialist_id}", response_model=dict[str, str])
 async def delete_specialist(
     specialist_id: uuid.UUID,
     request: Request,
@@ -147,18 +184,32 @@ async def delete_specialist(
     specialist = await SpecialistService.get_by_id(session, specialist_id)
 
     if not specialist:
+        await AuditService.log(
+            session=session,
+            user_id=current_user.id,
+            log_type=LogType.ERROR,
+            service=ServiceType.SPECIALIST,
+            detail=f"{request.client.host} - DELETE - /delete/{specialist_id} - 404 - specialist not found"
+        )
         raise HTTPException(status_code=404, detail="Specialist not found")
-
     if specialist.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not allowed")
+        await AuditService.log(
+            session=session,
+            user_id=current_user.id,
+            log_type=LogType.ERROR,
+            service=ServiceType.SPECIALIST,
+            detail=f"{request.client.host} - DELETE - /delete/{specialist_id} - 403 - not allowed to delete"
+        )
+        raise HTTPException(status_code=403, detail="Not allowed to delete")
+
     await SpecialistService.delete(session, specialist)
 
     await AuditService.log(
         session=session,
         user_id=current_user.id,
-        action=AuditAction.SPECIALIST_DELETED,
-        detail=f"Deleted specialist {specialist_id}",
-        ip_address=request.client.host
+        log_type=LogType.INFO,
+        service=ServiceType.SPECIALIST,
+        detail=f"{request.client.host} - DELETE - /delete/{specialist_id} - 200"
     )
 
     return {"message": "Specialist deleted"}
@@ -167,7 +218,7 @@ async def delete_specialist(
 # =========================
 # VERIFY SPECIALIST
 # =========================
-@router.patch("/{specialist_id}/verify", response_model=SpecialistDto)
+@router.patch("/verify/{specialist_id}", response_model=SpecialistDto)
 async def verify_specialist(
     specialist_id: uuid.UUID,
     request: Request,
@@ -177,6 +228,13 @@ async def verify_specialist(
     specialist = await SpecialistService.get_by_id(session, specialist_id)
 
     if not specialist:
+        await AuditService.log(
+            session=session,
+            user_id=current_user.id,
+            log_type=LogType.ERROR,
+            service=ServiceType.SPECIALIST,
+            detail=f"{request.client.host} - PATCH - /verify/{specialist_id} - 404 - specialist not found"
+        )
         raise HTTPException(status_code=404, detail="Specialist not found")
 
     result = await SpecialistService.verify(session, specialist)
@@ -184,9 +242,9 @@ async def verify_specialist(
     await AuditService.log(
         session=session,
         user_id=current_user.id,
-        action=AuditAction.SPECIALIST_VERIFIED,
-        detail=f"Verified specialist {specialist_id}",
-        ip_address=request.client.host
+        log_type=LogType.INFO,
+        service=ServiceType.SPECIALIST,
+        detail=f"{request.client.host} - PATCH - /verify/{specialist_id} - 200"
     )
 
     return result
@@ -195,7 +253,7 @@ async def verify_specialist(
 # =========================
 # FIND SPECIALISTS NEARBY
 # =========================
-@router.get("/search/nearby", response_model=list[SpecialistDto])
+@router.get("/search", response_model=list[SpecialistDto])
 async def find_specialists_nearby(
     lat: float,
     lon: float,
@@ -204,6 +262,7 @@ async def find_specialists_nearby(
     max_price: Optional[int] = None,
     request: Request = None,
     session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(require_admin)
 ):
     specialists = await SpecialistService.find_specialists_nearby(
         session=session,
@@ -216,9 +275,10 @@ async def find_specialists_nearby(
 
     await AuditService.log(
         session=session,
-        action=AuditAction.SPECIALIST_SEARCH,
-        detail=f"Search specialists near {lat},{lon}",
-        ip_address=request.client.host if request else None
+        user_id=current_user.id,
+        log_type=LogType.INFO,
+        service=ServiceType.SPECIALIST,
+        detail=f"{request.client.host} - GET - /search - 200"
     )
 
     return specialists

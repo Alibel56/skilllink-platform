@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.core.dependencies import (
     require_specialist
 )
-from backend.app.db.models.enums import AuditAction
+from backend.app.db.models.enums import LogType, ServiceType
 from backend.app.db.models.user import User
 from backend.app.db.session import get_session
 from backend.app.schemas.CatalogSchema import CatalogCreate, CatalogUpdate, CatalogFilter, CatalogDto
@@ -23,7 +23,7 @@ router = APIRouter(
 # CREATE CATALOG ITEM
 # ─────────────────────────────────────────
 
-@router.post("/", response_model=CatalogDto)
+@router.post("/create", response_model=CatalogDto)
 async def create_catalog_item(
     data: CatalogCreate,
     request: Request,
@@ -34,6 +34,13 @@ async def create_catalog_item(
     specialist = await SpecialistService.get_by_user_id(session, current_user.id)
 
     if not specialist:
+        await AuditService.log(
+            session=session,
+            user_id=current_user.id,
+            log_type=LogType.ERROR,
+            service=ServiceType.CATALOG,
+            detail=f"{request.client.host} - POST - /create - 404 - specialist not found"
+        )
         raise HTTPException(404, "Specialist profile not found")
 
     item = await CatalogService.create(
@@ -45,9 +52,9 @@ async def create_catalog_item(
     await AuditService.log(
         session=session,
         user_id=current_user.id,
-        action=AuditAction.CREATE_CATALOG_ITEM,
-        detail=f"Catalog item created {item.id}",
-        ip_address=request.client.host
+        log_type=LogType.INFO,
+        service=ServiceType.CATALOG,
+        detail=f"{request.client.host} - POST - /create - 200"
     )
 
     return item
@@ -56,12 +63,13 @@ async def create_catalog_item(
 # GET SPECIALIST CATALOG
 # ─────────────────────────────────────────
 
-@router.get("/specialist/{specialist_id}", response_model=list[CatalogDto])
+@router.get("/get/catalog/{specialist_id}", response_model=list[CatalogDto])
 async def get_specialist_catalog(
     specialist_id: uuid.UUID,
     request: Request,
     session: AsyncSession = Depends(get_session),
-    filters: CatalogFilter = Depends()
+    filters: CatalogFilter = Depends(),
+    current_user: User = Depends(require_specialist)
 ):
 
     items = await CatalogService.get_by_specialist_id(
@@ -72,9 +80,10 @@ async def get_specialist_catalog(
 
     await AuditService.log(
         session=session,
-        action=AuditAction.GET_SPECIALIST_CATALOG,
-        detail=f"Requested catalog of specialist {specialist_id}",
-        ip_address=request.client.host
+        user_id=current_user.id,
+        log_type=LogType.INFO,
+        service=ServiceType.CATALOG,
+        detail=f"{request.client.host} - GET - /get/catalog/{specialist_id} - 200"
     )
 
     return items
@@ -84,7 +93,7 @@ async def get_specialist_catalog(
 # UPDATE CATALOG ITEM
 # ─────────────────────────────────────────
 
-@router.put("/{catalog_id}", response_model=CatalogDto)
+@router.put("/update/{catalog_id}", response_model=CatalogDto)
 async def update_catalog_item(
     catalog_id: uuid.UUID,
     data: CatalogUpdate,
@@ -98,21 +107,35 @@ async def update_catalog_item(
     item = next((i for i in item if i.id == catalog_id), None)
 
     if not item:
-        raise HTTPException(404, "Catalog item not found")
+        await AuditService.log(
+            session=session,
+            user_id=current_user.id,
+            log_type=LogType.ERROR,
+            service=ServiceType.CATALOG,
+            detail=f"{request.client.host} - PUT - /update/{catalog_id} - 404 - catalog not found"
+        )
+        raise HTTPException(404, f"Catalog item {catalog_id} not found")
 
     specialist = await SpecialistService.get_by_user_id(session, current_user.id)
 
-    if item.specialist_id != specialist.id and current_user.role != "admin":
-        raise HTTPException(403, "Not allowed")
+    if item.specialist_id != specialist.id:
+        await AuditService.log(
+            session=session,
+            user_id=current_user.id,
+            log_type=LogType.ERROR,
+            service=ServiceType.CATALOG,
+            detail=f"{request.client.host} - PUT - /update/{catalog_id} - 403 - not allowed to update"
+        )
+        raise HTTPException(403, "Not allowed to update catalog item")
 
     updated = await CatalogService.update(session, item, data)
 
     await AuditService.log(
         session=session,
         user_id=current_user.id,
-        action=AuditAction.UPDATE_CATALOG_ITEM,
-        detail=f"Updated catalog item {catalog_id}",
-        ip_address=request.client.host
+        log_type=LogType.INFO,
+        service=ServiceType.CATALOG,
+        detail=f"{request.client.host} - PUT - /update/{catalog_id} - 200"
     )
 
     return updated
@@ -122,7 +145,7 @@ async def update_catalog_item(
 # DELETE CATALOG ITEM
 # ─────────────────────────────────────────
 
-@router.delete("/{catalog_id}")
+@router.delete("/delete/{catalog_id}", response_model=dict[str, str])
 async def delete_catalog_item(
     catalog_id: uuid.UUID,
     request: Request,
@@ -135,21 +158,35 @@ async def delete_catalog_item(
     item = next((i for i in items if i.id == catalog_id), None)
 
     if not item:
-        raise HTTPException(404, "Catalog item not found")
+        await AuditService.log(
+            session=session,
+            user_id=current_user.id,
+            log_type=LogType.ERROR,
+            service=ServiceType.CATALOG,
+            detail=f"{request.client.host} - DELETE - /delete/{catalog_id} - 404 - catalog not found"
+        )
+        raise HTTPException(404, f"Catalog item not found")
 
     specialist = await SpecialistService.get_by_user_id(session, current_user.id)
 
-    if item.specialist_id != specialist.id and current_user.role != "admin":
-        raise HTTPException(403, "Not allowed")
+    if item.specialist_id != specialist.id:
+        await AuditService.log(
+            session=session,
+            user_id=current_user.id,
+            log_type=LogType.ERROR,
+            service=ServiceType.CATALOG,
+            detail=f"{request.client.host} - DELETE - /delete/{catalog_id} - 403 - not allowed to delete"
+        )
+        raise HTTPException(403, "Not allowed to delete catalog item")
 
     await CatalogService.delete(session, item)
 
     await AuditService.log(
         session=session,
         user_id=current_user.id,
-        action=AuditAction.DELETE_CATALOG_ITEM,
-        detail=f"Deleted catalog item {catalog_id}",
-        ip_address=request.client.host
+        log_type=LogType.INFO,
+        service=ServiceType.CATALOG,
+        detail=f"{request.client.host} - DELETE - /delete/{catalog_id} - 200"
     )
 
     return {"message": "Catalog item deleted"}

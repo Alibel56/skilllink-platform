@@ -10,7 +10,7 @@ from backend.app.schemas.LoginSchema import LoginRequest
 from backend.app.services.AuthService import AuthService
 from backend.app.services.a.AuditService import AuditService
 from backend.app.db.session import get_session
-from backend.app.db.models.enums import AuditAction
+from backend.app.db.models.enums import LogType, ServiceType
 from backend.app.services.a.TokenBlocklistService import TokenBlocklistService
 from backend.app.core.Security import decode_token
 from backend.app.core.dependencies import bearer_scheme
@@ -22,7 +22,7 @@ router = APIRouter(
 )
 
 
-@router.post("/register")
+@router.post("/register", response_model=dict[str, str])
 async def register(
     request: Request,
     data: UserCreate,
@@ -32,10 +32,10 @@ async def register(
 
     await AuditService.log(
         session=session,
-        action=AuditAction.USER_REGISTER,
+        log_type=LogType.INFO,
+        service=ServiceType.AUTH,
         user_id=user.id,
-        detail=f"User registered with email {user.email}",
-        ip_address=request.client.host
+        detail=f"{request.client.host} - POST - /register - 200"
     )
 
     return {
@@ -44,7 +44,7 @@ async def register(
     }
 
 
-@router.post("/login")
+@router.post("/login", response_model=dict[str, str])
 async def login(
     request: Request,
     data: LoginRequest,
@@ -59,9 +59,9 @@ async def login(
     if not token:
         await AuditService.log(
             session=session,
-            action=AuditAction.LOGIN_FAILED,
-            detail=f"Failed login attempt for {data.email}",
-            ip_address=request.client.host
+            log_type = LogType.ERROR,
+            service=ServiceType.AUTH,
+            detail=f"{request.client.host} - POST - /login - 401 - invalid email or password"
         )
 
         raise HTTPException(
@@ -71,9 +71,9 @@ async def login(
 
     await AuditService.log(
         session=session,
-        action=AuditAction.LOGIN_SUCCESS,
-        detail=f"User {data.email} logged in",
-        ip_address=request.client.host
+        log_type=LogType.INFO,
+        service=ServiceType.AUTH,
+        detail=f"{request.client.host} - POST - /login - 200",
     )
 
     return {
@@ -82,15 +82,24 @@ async def login(
     }
 
 
-@router.post("/logout")
+@router.post("/logout", response_model=dict[str, str])
 async def logout(
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    current_user: User = Depends(get_current_user),  # проверяет подпись и blocklist
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     token = credentials.credentials
     payload = decode_token(token)
 
     if payload is None:
+        await AuditService.log(
+            session=session,
+            user_id=current_user.id,
+            log_type=LogType.ERROR,
+            service=ServiceType.AUTH,
+            detail=f"{request.client.host} - POST - /logout - 401 - invalid token",
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token"
@@ -104,5 +113,13 @@ async def logout(
 
     # Добавляем в blocklist только если токен ещё не истёк
     await TokenBlocklistService.add(jti, ttl)
+
+    await AuditService.log(
+        session=session,
+        user_id=current_user.id,
+        log_type=LogType.INFO,
+        service=ServiceType.AUTH,
+        detail=f"{request.client.host} - POST - /logout - 200",
+    )
 
     return {"message": "Successfully logged out"}

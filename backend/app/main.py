@@ -3,6 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from sqlmodel import SQLModel
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 # Все модели должны быть импортированы ДО вызова create_all
 import backend.app.db.models  # noqa: F401
@@ -16,6 +18,7 @@ from backend.app.core.Redis import redis_client
 from backend.app.db.session import engine
 from backend.app.exceptions.NotFoundException import NotFoundException
 from backend.app.exceptions.ValidationException import ValidationException
+from backend.app.core.middleware import LoggingMiddleware
 
 
 # -------------------------
@@ -46,6 +49,36 @@ app = FastAPI(
     description="Platform connecting clients with specialists",
     version="1.0.0",
     lifespan=lifespan
+)
+
+# -------------------------
+# MIDDLEWARE
+# -------------------------
+
+# 1a. CORS
+app.add_middleware(LoggingMiddleware)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://skilllink.kz",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 1a. TrustedHost
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=[
+        "localhost",
+        "127.0.0.1",
+        "skilllink.kz",
+        "*.skilllink.kz",
+    ],
 )
 
 # -------------------------
