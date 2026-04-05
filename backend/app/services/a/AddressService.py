@@ -5,8 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db.models.address import Address
 from backend.app.schemas.AddressSchema import AddressCreate
-from backend.app.services.h3Service import H3Service
-from backend.app.dao.AddressDao import AddressDao
+from backend.app.services.a.h3Service import H3Service
+from backend.app.dao.a.AddressDao import AddressDao
 from backend.app.validation.CreateValidation import CreateValidation
 
 class AddressService:

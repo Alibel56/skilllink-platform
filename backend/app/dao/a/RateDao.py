@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from backend.app.db.models.enums import OrderStatus
-from backend.app.db.models.order import Order
+from backend.app.db.models.orders import Order
 from backend.app.db.models.rate import Rate
 
 

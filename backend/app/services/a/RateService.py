@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db.models.rate import Rate
 from backend.app.schemas.RateSchema import RateCreate
-from backend.app.dao.RateDao import RateDao
+from backend.app.dao.a.RateDao import RateDao
 from backend.app.validation.CreateValidation import CreateValidation
 
 class RateService:

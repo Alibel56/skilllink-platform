@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db.models.comment import Comment
 from backend.app.schemas.CommentSchema import CommentCreate, CommentFilter
-from backend.app.dao.CommentDao import CommentDao
+from backend.app.dao.a.CommentDao import CommentDao
 from backend.app.validation.CreateValidation import CreateValidation
 
 class CommentService:

@@ -6,8 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.dao.SpecialistDao import SpecialistDao
 from backend.app.db.models.specialist import Specialist
 from backend.app.schemas.SpecialistSchema import SpecialistCreate, SpecialistUpdate
-from backend.app.services.H3zonestatsservice import H3ZoneStatsService
-from backend.app.services.h3Service import H3Service
+from backend.app.services.a.H3zonestatsservice import H3ZoneStatsService
+from backend.app.services.a.h3Service import H3Service
 from backend.app.validation.CreateValidation import CreateValidation
 
 
@@ -49,11 +49,6 @@ class SpecialistService:
     @staticmethod
     async def get_by_user_id(session: AsyncSession, user_id: uuid.UUID) -> Optional[Specialist]:
         result = await SpecialistDao.get_by_user_id(session, user_id)
-        return result
-
-    @staticmethod
-    async def get_by_name_surname(session: AsyncSession, name: str, surname: str) -> Optional[Specialist]:
-        result = await SpecialistDao.get_by_name_surname(session, name, surname)
         return result
 
     @staticmethod

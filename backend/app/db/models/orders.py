@@ -10,9 +10,10 @@ if TYPE_CHECKING:
     from backend.app.db.models.user import User
     from backend.app.db.models.specialist import Specialist
     from backend.app.db.models.message import Message
+    from backend.app.db.models.order_request import OrderRequest
 
 class Order(SQLModel, table=True):
-    __tablename__ = "order"
+    __tablename__ = "orders"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(foreign_key="users.id")
@@ -27,13 +28,10 @@ class Order(SQLModel, table=True):
         sa_type=DateTime(timezone=True),
         nullable=False
     )
-    completed_at: Optional[datetime] = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
-        sa_type=DateTime(timezone=True),
-        nullable=False
-    )
+    completed_at: Optional[datetime] = None
 
     # Relationships
     user: Optional[User] = Relationship(back_populates="orders", sa_relationship_kwargs={"lazy": "selectin"})
     specialist: Optional[Specialist] = Relationship(back_populates="orders", sa_relationship_kwargs={"lazy": "selectin"})
-    messages: list["Message"] = Relationship(back_populates="order", sa_relationship_kwargs={"lazy": "selectin"})
+    messages: list["Message"] = Relationship(back_populates="orders", sa_relationship_kwargs={"lazy": "selectin"})
+    order_requests: list["OrderRequest"] = Relationship(back_populates="orders", sa_relationship_kwargs={"lazy": "selectin"})

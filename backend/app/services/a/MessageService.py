@@ -8,7 +8,7 @@ from backend.app.db.models.message import Message
 from backend.app.exceptions.NotFoundException import NotFoundException
 from backend.app.exceptions.ValidationException import ValidationException
 from backend.app.schemas.MessageSchema import MessageCreate
-from backend.app.dao.MessageDao import MessageDao
+from backend.app.dao.a.MessageDao import MessageDao
 
 class MessageService:
 

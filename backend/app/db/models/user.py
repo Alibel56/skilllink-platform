@@ -10,11 +10,12 @@ from backend.app.db.models.enums import UserRole
 if TYPE_CHECKING:
     from backend.app.db.models.address import Address
     from backend.app.db.models.specialist import Specialist
-    from backend.app.db.models.order import Order
+    from backend.app.db.models.orders import Order
     from backend.app.db.models.rate import Rate
     from backend.app.db.models.comment import Comment
     from backend.app.db.models.auditLog import AuditLog
     from backend.app.db.models.message import Message
+    from backend.app.db.models.order_request import OrderRequest
 
 class User(SQLModel, table=True):
     __tablename__ = "users"
@@ -41,3 +42,4 @@ class User(SQLModel, table=True):
     comments: list["Comment"] = Relationship(back_populates="user", sa_relationship_kwargs={"lazy": "selectin"})
     audit_logs: list["AuditLog"] = Relationship(back_populates="user", sa_relationship_kwargs={"lazy": "selectin"})
     messages: list["Message"] = Relationship(back_populates="sender", sa_relationship_kwargs={"lazy": "selectin"})
+    order_requests: list["OrderRequest"] = Relationship(back_populates="user", sa_relationship_kwargs={"lazy": "selectin"})

@@ -27,5 +27,4 @@ class UserDto(UserBase):
     id: uuid.UUID
     role: UserRole
     created_at: datetime
-    hashed_password: str
     model_config = {"from_attributes": True}

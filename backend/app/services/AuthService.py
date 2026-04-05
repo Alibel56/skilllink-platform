@@ -1,6 +1,4 @@
-from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 
 from backend.app.dao.UserDao import UserDao
 from backend.app.db.models.user import User

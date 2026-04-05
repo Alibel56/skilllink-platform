@@ -9,12 +9,14 @@ from backend.app.core.dependencies import (
     require_specialist,
     require_any
 )
-from backend.app.db.models.enums import AuditAction
+from backend.app.db.models.enums import AuditAction, OrderStatus
 from backend.app.db.models.user import User
 from backend.app.db.session import get_session
+from backend.app.schemas.OrderRequestsSchema import OrderRequestCreate
 from backend.app.schemas.OrderSchema import OrderCreate, OrderUpdate, OrderDto
-from backend.app.services.AuditService import AuditService
+from backend.app.services.a.AuditService import AuditService
 from backend.app.services.OrderService import OrderService
+from backend.app.services.OrderRequestsService import OrderRequestsService
 from backend.app.services.SpecialistService import SpecialistService
 
 router = APIRouter(
@@ -162,7 +164,7 @@ async def update_order(
 # TAKE ORDER (specialist)
 # ─────────────────────────────────────────
 
-@router.post("/{order_id}/take", response_model=OrderDto)
+@router.post("/{order_id}/take", response_model=dict[str, str])
 async def take_order(
     order_id: uuid.UUID,
     request: Request,
@@ -175,21 +177,31 @@ async def take_order(
     if not specialist:
         raise HTTPException(404, "Specialist profile not found")
 
-    result = await OrderService.take_order(
-        session,
-        order_id,
-        specialist.id
+    order = await OrderService.get_by_id(session, order_id)
+    if not order:
+        raise HTTPException(404, "Order not found")
+    if order.status != OrderStatus.open:
+        raise HTTPException(400, "Order is not available")
+    if order.user_id == current_user.id:
+        raise HTTPException(400, "Cannot take your own order")
+
+    data = OrderRequestCreate(
+        user_id=order.user_id,
+        specialist_id=specialist.id,
+        order_id = order.id
     )
+
+    await OrderRequestsService.try_to_take_order(session,data)
 
     await AuditService.log(
         session=session,
         user_id=current_user.id,
         action=AuditAction.TAKE_ORDER,
-        detail=f"Specialist took order {order_id}",
+        detail=f"Specialist took order {data.order_id}",
         ip_address=request.client.host
     )
 
-    return result
+    return {"message": "Thank You for the interest. Please Wait the approval"}
 
 
 # ─────────────────────────────────────────
@@ -235,7 +247,7 @@ async def cancel_order(
     order_id: uuid.UUID,
     request: Request,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(require_any)
+    current_user: User = Depends(require_client)
 ):
 
     order = await OrderService.get_by_id(session, order_id)
@@ -276,6 +288,8 @@ async def delete_order(
 
     if not order:
         raise HTTPException(404, "Order not found")
+    if order.user_id != current_user.id:
+        raise HTTPException(403, "Not allowed")
 
     await OrderService.delete(session, order)
 

@@ -12,6 +12,11 @@ class OrderStatus(str, Enum):
     completed = "completed"
     cancelled = "cancelled"
 
+class RequestStatus(str, Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
 class AuditAction(str, Enum):
     USER_REGISTER = "USER_REGISTER"
     LOGIN_SUCCESS = "LOGIN_SUCCESS"
@@ -31,6 +36,8 @@ class AuditAction(str, Enum):
     DEACTIVATE_ORDER = "DEACTIVATE_ORDER"
     DELETE_ORDER = "DELETE_ORDER"
     TAKE_ORDER = "TAKE_ORDER"
+    APPROVE_ORDER = "APPROVE_ORDER"
+    GET_ALL_REQUESTS = "GET_ALL_REQUESTS"
     COMPLETE_ORDER = "COMPLETE_ORDER"
     CANCEL_ORDER = "CANCEL_ORDER"
     CREATE_CATALOG_ITEM = "CREATE_CATALOG_ITEM"

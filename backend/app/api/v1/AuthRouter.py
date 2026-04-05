@@ -8,10 +8,10 @@ from backend.app.db.models.user import User
 from backend.app.schemas.UserSchema import UserCreate
 from backend.app.schemas.LoginSchema import LoginRequest
 from backend.app.services.AuthService import AuthService
-from backend.app.services.AuditService import AuditService
+from backend.app.services.a.AuditService import AuditService
 from backend.app.db.session import get_session
 from backend.app.db.models.enums import AuditAction
-from backend.app.services.TokenBlocklistService import TokenBlocklistService
+from backend.app.services.a.TokenBlocklistService import TokenBlocklistService
 from backend.app.core.Security import decode_token
 from backend.app.core.dependencies import bearer_scheme
 from fastapi.security import HTTPAuthorizationCredentials

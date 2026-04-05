@@ -11,6 +11,7 @@ from backend.app.api.v1.CatalogRouter import router as catalog_router
 from backend.app.api.v1.OrderRouter import router as order_router
 from backend.app.api.v1.SpecialistRouter import router as specialist_router
 from backend.app.api.v1.UserRouter import router as user_router
+from backend.app.api.v1.RequestsRouter import router as request_router
 from backend.app.core.Redis import redis_client
 from backend.app.db.session import engine
 from backend.app.exceptions.NotFoundException import NotFoundException
@@ -74,6 +75,7 @@ app.include_router(user_router,           prefix="/api/v1")
 app.include_router(specialist_router,     prefix="/api/v1")
 app.include_router(order_router,          prefix="/api/v1")
 app.include_router(catalog_router,        prefix="/api/v1")
+app.include_router(request_router,        prefix="/api/v1")
 
 
 # -------------------------

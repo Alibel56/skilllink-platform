@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from backend.app.db.models.enums import OrderStatus
-from backend.app.db.models.order import Order
+from backend.app.db.models.orders import Order
 
 class OrderDao:
 
@@ -27,7 +27,7 @@ class OrderDao:
         result = await session.execute(
             select(Order).where(Order.id == order_id)
         )
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     @staticmethod
     async def get_user_orders(
@@ -83,7 +83,7 @@ class OrderDao:
         result = await session.execute(
             select(Order).where(Order.id == order_id).with_for_update()
         )
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     @staticmethod
     async def get_specialist_active_order(
@@ -95,7 +95,7 @@ class OrderDao:
             .where(Order.specialist_id == specialist_id)
             .where(Order.is_active == True)
         )
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     @staticmethod
     async def update(

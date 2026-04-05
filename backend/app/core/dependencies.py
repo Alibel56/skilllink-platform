@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.core.Security import decode_token
 from backend.app.db.models.user import User
 from backend.app.db.session import get_session
-from backend.app.dao.UserDao import UserDao
-from backend.app.services.TokenBlocklistService import TokenBlocklistService
+from backend.app.services.a.TokenBlocklistService import TokenBlocklistService
+from backend.app.services.UserService import UserService
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -44,7 +44,7 @@ async def get_current_user(
     except ValueError:
         raise credentials_exception
 
-    user = await UserDao.get_by_id(session, user_id)
+    user = await UserService.get_by_id(session, user_id)
     if user is None:
         raise credentials_exception
 

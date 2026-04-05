@@ -5,7 +5,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db.models.h3ZoneStats import H3ZoneStats
-from backend.app.db.models.order import Order
+from backend.app.db.models.orders import Order
 from backend.app.db.models.specialist import Specialist
 from backend.app.db.models.enums import OrderStatus
 

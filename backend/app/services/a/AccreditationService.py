@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db.models.accreditation import Accreditation
 from backend.app.schemas.AccreditationSchema import AccreditationCreate
-from backend.app.dao.AccreditationDao import AccreditationDao
+from backend.app.dao.a.AccreditationDao import AccreditationDao
 
 class AccreditationService:
 

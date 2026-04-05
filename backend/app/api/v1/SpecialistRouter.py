@@ -7,13 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.core.dependencies import (
     require_admin,
     require_specialist,
-    require_any, require_client
+    require_client
 )
 from backend.app.db.models.enums import AuditAction
 from backend.app.db.models.user import User
 from backend.app.db.session import get_session
 from backend.app.schemas.SpecialistSchema import SpecialistCreate, SpecialistUpdate, SpecialistDto
-from backend.app.services.AuditService import AuditService
+from backend.app.services.a.AuditService import AuditService
 from backend.app.services.SpecialistService import SpecialistService
 
 router = APIRouter(
@@ -149,6 +149,8 @@ async def delete_specialist(
     if not specialist:
         raise HTTPException(status_code=404, detail="Specialist not found")
 
+    if specialist.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not allowed")
     await SpecialistService.delete(session, specialist)
 
     await AuditService.log(

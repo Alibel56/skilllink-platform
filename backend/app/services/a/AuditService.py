@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db.models.auditLog import AuditLog
 from backend.app.db.models.enums import AuditAction
-from backend.app.dao.AuditDao import AuditDao
+from backend.app.dao.a.AuditDao import AuditDao
 
 class AuditService:
 

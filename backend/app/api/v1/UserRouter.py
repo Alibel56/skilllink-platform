@@ -7,11 +7,14 @@ from backend.app.core.dependencies import (
     get_current_user,
     require_any
 )
+from backend.app.db.models import OrderRequest
 from backend.app.db.models.enums import AuditAction
 from backend.app.db.models.user import User
 from backend.app.db.session import get_session
+from backend.app.schemas.OrderRequestsSchema import OrderRequestCreate
 from backend.app.schemas.UserSchema import UserUpdate, UserDto
-from backend.app.services.AuditService import AuditService
+from backend.app.services.OrderRequestsService import OrderRequestsService
+from backend.app.services.a.AuditService import AuditService
 from backend.app.services.UserService import UserService
 
 router = APIRouter(
@@ -23,7 +26,7 @@ router = APIRouter(
 # =========================
 # GET CURRENT USER
 # =========================
-@router.get("/me/profile", response_model=UserDto)
+@router.get("/profile", response_model=UserDto)
 async def get_me(
     current_user: User = Depends(get_current_user)
 ):
@@ -77,6 +80,9 @@ async def delete_user(
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    if current_user.id != user.id:
+        raise HTTPException(status_code=403, detail="Not allowed")
 
     await UserService.delete(session, user)
 

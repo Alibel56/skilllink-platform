@@ -6,7 +6,7 @@ from sqlalchemy import select, Select
 
 from backend.app.db.models.comment import Comment
 from backend.app.db.models.enums import OrderStatus
-from backend.app.db.models.order import Order
+from backend.app.db.models.orders import Order
 from backend.app.schemas.CommentSchema import CommentFilter
 
 

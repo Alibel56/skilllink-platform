@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db.models.catalog import Catalog
 from backend.app.schemas.CatalogSchema import CatalogCreate, CatalogUpdate, CatalogFilter
-from backend.app.dao.CatalogDao import CatalogDao
+from backend.app.dao.a.CatalogDao import CatalogDao
 from backend.app.validation.CreateValidation import CreateValidation
 
 class CatalogService:

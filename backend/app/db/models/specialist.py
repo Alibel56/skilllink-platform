@@ -9,9 +9,10 @@ if TYPE_CHECKING:
     from backend.app.db.models.user import User
     from backend.app.db.models.catalog import Catalog
     from backend.app.db.models.accreditation import Accreditation
-    from backend.app.db.models.order import Order
+    from backend.app.db.models.orders import Order
     from backend.app.db.models.rate import Rate
     from backend.app.db.models.comment import Comment
+    from backend.app.db.models.order_request import OrderRequest
 
 class Specialist(SQLModel, table=True):
     __tablename__ = "specialist"
@@ -34,3 +35,4 @@ class Specialist(SQLModel, table=True):
     orders: list["Order"] = Relationship(back_populates="specialist", sa_relationship_kwargs={"lazy": "selectin"})
     rates: list["Rate"] = Relationship(back_populates="specialist", sa_relationship_kwargs={"lazy": "selectin"})
     comments: list["Comment"] = Relationship(back_populates="specialist", sa_relationship_kwargs={"lazy": "selectin"})
+    order_requests: list["OrderRequest"] = Relationship(back_populates="specialist", sa_relationship_kwargs={"lazy": "selectin"})

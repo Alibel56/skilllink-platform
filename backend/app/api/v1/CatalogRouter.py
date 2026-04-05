@@ -1,19 +1,17 @@
 import uuid
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.core.dependencies import (
-    require_specialist,
-    require_any
+    require_specialist
 )
 from backend.app.db.models.enums import AuditAction
 from backend.app.db.models.user import User
 from backend.app.db.session import get_session
 from backend.app.schemas.CatalogSchema import CatalogCreate, CatalogUpdate, CatalogFilter, CatalogDto
-from backend.app.services.AuditService import AuditService
-from backend.app.services.CatalogService import CatalogService
+from backend.app.services.a.AuditService import AuditService
+from backend.app.services.a.CatalogService import CatalogService
 from backend.app.services.SpecialistService import SpecialistService
 
 router = APIRouter(

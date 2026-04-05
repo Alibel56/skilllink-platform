@@ -2,12 +2,12 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.dao.AddressDao import AddressDao
-from backend.app.dao.CatalogDao import CatalogDao
+from backend.app.dao.a.AddressDao import AddressDao
+from backend.app.dao.a.CatalogDao import CatalogDao
 from backend.app.dao.UserDao import UserDao
 from backend.app.dao.SpecialistDao import SpecialistDao
-from backend.app.dao.RateDao import RateDao
-from backend.app.dao.CommentDao import CommentDao
+from backend.app.dao.a.RateDao import RateDao
+from backend.app.dao.a.CommentDao import CommentDao
 from backend.app.schemas.CatalogSchema import CatalogCreate, CatalogFilter
 from backend.app.schemas.CommentSchema import CommentCreate, CommentFilter
 from backend.app.schemas.RateSchema import RateCreate
