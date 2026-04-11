@@ -22,4 +22,7 @@ class Catalog(SQLModel, table=True):
     )
 
     # Relationships
-    specialist: Optional[Specialist] = Relationship(back_populates="catalog", sa_relationship_kwargs={"lazy": "selectin"})
+    specialist: Optional["Specialist"] = Relationship(
+        back_populates="catalog",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )

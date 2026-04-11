@@ -1,0 +1,174 @@
+services:
+
+  # ─────────────────────────────────────────
+  # Redis — брокер для Celery + кэш
+  # ─────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: skilllink_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────
+  # PostgreSQL — локальная БД с persistent volume
+  # (Supabase используется как основная БД,
+  #  этот контейнер закрывает пункт задания про volumes)
+  # ─────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: skilllink_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-skilllink}
+      POSTGRES_USER: ${POSTGRES_USER:-skilllink}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-skilllink_secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data   # ← persistent storage
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-skilllink} -d ${POSTGRES_DB:-skilllink}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────
+  # Adminer — UI для любой БД (Supabase / локальный Postgres)
+  # ─────────────────────────────────────────
+  adminer:
+    image: adminer:latest
+    container_name: skilllink_adminer
+    restart: unless-stopped
+    ports:
+      - "8082:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ─────────────────────────────────────────
+  # FastAPI Application
+  # ─────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: skilllink_api
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/')\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ─────────────────────────────────────────
+  # Celery Worker
+  # ─────────────────────────────────────────
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: skilllink_celery_worker
+    restart: unless-stopped
+    env_file: .env
+    command: ["celery", "-A", "backend.app.tasks.celery_app.celery_app", "worker", "--loglevel=info", "--concurrency=4"]
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ─────────────────────────────────────────
+  # Celery Beat (планировщик задач)
+  # ─────────────────────────────────────────
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: skilllink_celery_beat
+    restart: unless-stopped
+    env_file: .env
+    command: ["celery", "-A", "backend.app.tasks.celery_app.celery_app", "beat", "--loglevel=info", "--schedule=/tmp/celerybeat-schedule"]
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ─────────────────────────────────────────
+  # Flower — мониторинг Celery задач
+  # ─────────────────────────────────────────
+  flower:
+    image: mher/flower:2.0
+    container_name: skilllink_flower
+    restart: unless-stopped
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      FLOWER_PORT: 5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      redis:
+        condition: service_healthy
+      celery_worker:
+        condition: service_started
+
+  # ─────────────────────────────────────────
+  # Redis Commander — UI для Redis
+  # ─────────────────────────────────────────
+  redis_commander:
+    image: rediscommander/redis-commander:latest
+    container_name: skilllink_redis_commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ─────────────────────────────────────────
+  # Nginx — reverse proxy
+  # ─────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: skilllink_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      api:
+        condition: service_healthy
+
+
+# ─────────────────────────────────────────────
+# Volumes — данные сохраняются между перезапусками
+# ─────────────────────────────────────────────
+volumes:
+  postgres_data:    # БД не теряется при docker compose down
+    driver: local
+  redis_data:       # Redis AOF persistence
+    driver: local
+  uploads_data:     # Загруженные файлы пользователей
+    driver: local

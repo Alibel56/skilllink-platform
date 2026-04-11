@@ -23,5 +23,12 @@ class Message(SQLModel, table=True):
     )
 
     # Relationships
-    orders: Optional[Order] = Relationship(back_populates="messages", sa_relationship_kwargs={"lazy": "selectin"})
-    sender: Optional[User] = Relationship(back_populates="messages", sa_relationship_kwargs={"lazy": "selectin"})
+    orders: Optional["Order"] = Relationship(
+        back_populates="messages",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    sender: Optional["User"] = Relationship(
+        back_populates="messages",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )

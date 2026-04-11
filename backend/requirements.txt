@@ -2,6 +2,8 @@ fastapi
 uvicorn[standard]
 
 sqlalchemy
+sqlmodel
+asyncpg
 psycopg2-binary
 alembic
 
@@ -11,8 +13,16 @@ pydantic-settings
 python-jose[cryptography]
 passlib[bcrypt]
 
+python-dotenv
+redis[asyncio]
+
+celery[redis]
+flower
+
+pillow
+aiofiles
+python-multipart
+
 h3
 
-python-dotenv
-
-redis
+email-validator

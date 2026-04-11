@@ -31,7 +31,22 @@ class Order(SQLModel, table=True):
     completed_at: Optional[datetime] = None
 
     # Relationships
-    user: Optional[User] = Relationship(back_populates="orders", sa_relationship_kwargs={"lazy": "selectin"})
-    specialist: Optional[Specialist] = Relationship(back_populates="orders", sa_relationship_kwargs={"lazy": "selectin"})
-    messages: list["Message"] = Relationship(back_populates="orders", sa_relationship_kwargs={"lazy": "selectin"})
-    order_requests: list["OrderRequest"] = Relationship(back_populates="orders", sa_relationship_kwargs={"lazy": "selectin"})
+    user: Optional["User"] = Relationship(
+        back_populates="orders",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    specialist: Optional["Specialist"] = Relationship(
+        back_populates="orders",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    messages: list["Message"] = Relationship(
+        back_populates="orders",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    order_requests: list["OrderRequest"] = Relationship(
+        back_populates="orders",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )

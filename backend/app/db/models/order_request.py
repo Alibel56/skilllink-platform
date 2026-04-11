@@ -32,6 +32,17 @@ class OrderRequest(SQLModel, table=True):
     )
 
     # Relationships
-    user: Optional[User] = Relationship(back_populates="order_requests", sa_relationship_kwargs={"lazy": "selectin"})
-    specialist: Optional[Specialist] = Relationship(back_populates="order_requests", sa_relationship_kwargs={"lazy": "selectin"})
-    orders: Optional["Order"] = Relationship(back_populates="order_requests", sa_relationship_kwargs={"lazy": "selectin"})
+    user: Optional["User"] = Relationship(
+        back_populates="order_requests",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    specialist: Optional["Specialist"] = Relationship(
+        back_populates="order_requests",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    orders: Optional["Order"] = Relationship(
+        back_populates="order_requests",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )

@@ -21,4 +21,7 @@ class Accreditation(SQLModel, table=True):
     )
 
     # Relationships
-    specialist: Optional[Specialist] = Relationship(back_populates="accreditations", sa_relationship_kwargs={"lazy": "selectin"})
+    specialist: Optional["Specialist"] = Relationship(
+        back_populates="accreditations",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )

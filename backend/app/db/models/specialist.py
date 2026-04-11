@@ -29,10 +29,37 @@ class Specialist(SQLModel, table=True):
     )
 
     # Relationships
-    user: Optional[User] = Relationship(back_populates="specialist", sa_relationship_kwargs={"lazy": "selectin"})
-    catalog: list["Catalog"] = Relationship(back_populates="specialist", sa_relationship_kwargs={"lazy": "selectin"})
-    accreditations: list["Accreditation"] = Relationship(back_populates="specialist", sa_relationship_kwargs={"lazy": "selectin"})
-    orders: list["Order"] = Relationship(back_populates="specialist", sa_relationship_kwargs={"lazy": "selectin"})
-    rates: list["Rate"] = Relationship(back_populates="specialist", sa_relationship_kwargs={"lazy": "selectin"})
-    comments: list["Comment"] = Relationship(back_populates="specialist", sa_relationship_kwargs={"lazy": "selectin"})
-    order_requests: list["OrderRequest"] = Relationship(back_populates="specialist", sa_relationship_kwargs={"lazy": "selectin"})
+    user: Optional["User"] = Relationship(
+        back_populates="specialist",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    catalog: list["Catalog"] = Relationship(
+        back_populates="specialist",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    accreditations: list["Accreditation"] = Relationship(
+        back_populates="specialist",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    orders: list["Order"] = Relationship(
+        back_populates="specialist",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    rates: list["Rate"] = Relationship(
+        back_populates="specialist",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    comments: list["Comment"] = Relationship(
+        back_populates="specialist",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    order_requests: list["OrderRequest"] = Relationship(
+        back_populates="specialist",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
