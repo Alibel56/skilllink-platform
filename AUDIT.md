@@ -27,8 +27,8 @@ Commit messages are understandable but can be improved further.
 ## Justification
 The repository is now organized and professional, but some old folders can still be cleaned in future refactoring.
 ### Student ID:
-Alibek Aglanov (230103228) - Backend Developer
-Danial Kaltay (230103193) - PM/Tester
-Ainat Yermurat (230103161) - Frontend
-Sauytbek Beksultan (220103118) - Frontend
+- Alibek Aglanov (230103228) - Backend Developer
+- Danial Kaltay (230103193) - PM/Tester
+- Ainat Yermurat (230103161) - Frontend
+- Sauytbek Beksultan (220103118) - Frontend
 
