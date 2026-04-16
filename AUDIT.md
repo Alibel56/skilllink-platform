@@ -24,3 +24,9 @@ Commits are not very descriptive (e.g., "docker imp").
 
 ### Why:
 Project works but structure is not clean and documentation is weak.
+### Student ID:
+Alibek Aglanov (230103228) - Backend Developer
+Danial Kaltay (230103193) - PM/Tester
+Ainat Yermurat (230103161) - Frontend
+Sauytbek Beksultan (220103118) - Frontend
+
