@@ -1,29 +1,31 @@
 # Repository Audit
 
-## 1. README Quality
-README is basic and needs improvement. No clear description, setup, or usage instructions.
+## Repository Evaluation
 
-## 2. Folder Structure
-Current structure is mixed (backend, frontend, nginx, alembic). Not unified.
+### README quality
+The README file has been improved with project description, features, installation and usage instructions.
 
-## 3. File Naming Consistency
-Mostly consistent, but some names unclear (e.g., spec.md).
+### Folder structure
+The repository structure was cleaned and organized into proper folders such as src and docs.
 
-## 4. Essential Files
-- .gitignore 
-- Dockerfile 
-- LICENSE(missing)
-- requirements/package.json partly missing
+### File naming consistency
+Most files follow a clear and consistent naming convention.
 
-## 5. Commit History
-Commits are not very descriptive (e.g., "docker imp").
+### Essential files
+The repository now includes:
+- .gitignore
+- README.md
+- LICENSE
+- dependency files
 
----
+### Commit history quality
+Commit messages are understandable but can be improved further.
 
-## Score: 6/10
+## Score
+8/10
 
-### Why:
-Project works but structure is not clean and documentation is weak.
+## Justification
+The repository is now organized and professional, but some old folders can still be cleaned in future refactoring.
 ### Student ID:
 Alibek Aglanov (230103228) - Backend Developer
 Danial Kaltay (230103193) - PM/Tester
