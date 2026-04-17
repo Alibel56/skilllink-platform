@@ -12,7 +12,7 @@ logger = logging.getLogger("skilllink.tasks")
 
 @celery_app.task(name="tasks.cancel_expired_orders")
 def cancel_expired_orders():
-    threshold = datetime.now(timezone.utc) - timedelta(seconds=30)
+    threshold = datetime.now(timezone.utc) - timedelta(weeks=1)
 
     try:
         conn = psycopg2.connect(settings.DATABASE_URL_SYNC)

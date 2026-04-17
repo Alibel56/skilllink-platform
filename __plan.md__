@@ -1,0 +1,49 @@
+# SkillLink Platform — API Endpoints
+
+## Authentication
+- POST /api/v1/auth/register — register a new user
+- GET /api/v1/auth/confirm-email — confirm email address
+- POST /api/v1/auth/login — login and get JWT token
+- POST /api/v1/auth/logout — logout and invalidate token
+- POST /api/v1/auth/forgot-password — request password reset
+- POST /api/v1/auth/reset-password — reset password with token
+
+## Users
+- GET /api/v1/users/profile — get current user profile
+- PUT /api/v1/users/update/{user_id} — update user profile
+- DELETE /api/v1/users/delete/{user_id} — delete user profile
+
+## Files
+- POST /api/v1/files/upload/avatar — upload user avatar
+- GET /api/v1/files/get/avatar — get user avatar
+
+## Specialists
+- POST /api/v1/specialists/create — create specialist profile
+- GET /api/v1/specialists/get/{specialist_id} — get specialist by id
+- PUT /api/v1/specialists/update/{specialist_id} — update specialist profile
+- PATCH /api/v1/specialists/deactivate/{specialist_id} — deactivate specialist
+- DELETE /api/v1/specialists/delete/{specialist_id} — delete specialist
+- PATCH /api/v1/specialists/verify/{specialist_id} — verify specialist
+- GET /api/v1/specialists/search — search specialists
+
+## Orders
+- POST /api/v1/orders/create — create order
+- GET /api/v1/orders/get/{order_id} — get order by id
+- GET /api/v1/orders/my — get my orders
+- GET /api/v1/orders/active — get active orders
+- GET /api/v1/orders/specialist/my — get specialist orders
+- PUT /api/v1/orders/update/{order_id} — update order
+- POST /api/v1/orders/take/{order_id} — try to take order(creating request)
+- POST /api/v1/orders/complete/{order_id} — complete order
+- POST /api/v1/orders/cancel/{order_id} — cancel order
+- DELETE /api/v1/orders/delete/{order_id} — delete order
+
+## Catalog
+- POST /api/v1/catalog/create — create catalog entry
+- GET /api/v1/catalog/get/catalog/{specialist_id} — get specialist catalog
+- PUT /api/v1/catalog/update/{catalog_id} — update catalog entry
+- DELETE /api/v1/catalog/delete/{catalog_id} — delete catalog entry
+
+## Requests
+- GET /api/v1/requests/get/all/{user_id} — get all requests for user
+- PUT /api/v1/requests/approve/{request_id} — approve request

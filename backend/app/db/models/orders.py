@@ -28,7 +28,11 @@ class Order(SQLModel, table=True):
         sa_type=DateTime(timezone=True),
         nullable=False
     )
-    completed_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = Field(
+        default=None,
+        sa_type=DateTime(timezone=True),
+        nullable=True
+    )
 
     # Relationships
     user: Optional["User"] = Relationship(

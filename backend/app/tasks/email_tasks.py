@@ -37,7 +37,7 @@ def _send_email(to: str, subject: str, html_body: str) -> None:
 
 @celery_app.task(name="tasks.send_email_confirmation", bind=True, max_retries=3, default_retry_delay=10)
 def send_email_confirmation(self, user_email: str, user_name: str, token: str):
-    confirm_url = f"https://skilllink.kz/confirm-email?token={token}"
+    confirm_url = f"http://127.0.0.1:8000/api/v1/auth/confirm-email?token={token}"
     subject = "Подтвердите ваш email — SkillLink"
     html_body = f"""
     <h2>Привет, {user_name}!</h2>
@@ -56,7 +56,7 @@ def send_email_confirmation(self, user_email: str, user_name: str, token: str):
 
 @celery_app.task(name="tasks.send_password_reset", bind=True, max_retries=3, default_retry_delay=10)
 def send_password_reset(self, user_email: str, user_name: str, token: str):
-    reset_url = f"https://skilllink.kz/reset-password?token={token}"
+    reset_url = f"http://127.0.0.1:8000/api/v1/auth/reset-password?token={token}"
     subject = "Сброс пароля — SkillLink"
     html_body = f"""
     <h2>Привет, {user_name}!</h2>

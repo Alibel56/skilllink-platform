@@ -180,7 +180,7 @@ async def take_order(
 # COMPLETE ORDER
 # ─────────────────────────────────────────
 
-@router.post("/complete/{order_id}", response_model=OrderDto)
+@router.post("/complete/{order_id}", response_model=dict[str, str])
 async def complete_order(
     order_id: uuid.UUID,
     request: Request,
@@ -192,8 +192,8 @@ async def complete_order(
 
     if not order:
         raise HTTPException(404, "Order not found")
-    if order.user_id == current_user.id:
-        raise HTTPException(404, "Not allowed to delete order")
+    if order.user_id != current_user.id:
+        raise HTTPException(404, "Not allowed to complete order")
 
     result = await OrderService.complete_order(
         session,
@@ -201,14 +201,14 @@ async def complete_order(
         current_user.id
     )
 
-    return result
+    return {"message": f"Order completed at{result.completed_at}"}
 
 
 # ─────────────────────────────────────────
 # CANCEL ORDER
 # ─────────────────────────────────────────
 
-@router.post("/cancel/{order_id}", response_model=OrderDto)
+@router.post("/cancel/{order_id}", response_model=dict[str, str])
 async def cancel_order(
     order_id: uuid.UUID,
     request: Request,
@@ -221,15 +221,15 @@ async def cancel_order(
     if not order:
         raise HTTPException(404, "Order not found")
 
-    if order.user_id == current_user.id:
-        raise HTTPException(404, "Not allowed to delete order")
+    if order.user_id != current_user.id:
+        raise HTTPException(404, "Not allowed to cancel order")
 
     result = await OrderService.cancel_order(
         session,
         order,
         current_user.id
     )
-    return result
+    return {"message": "Order canceled}"}
 
 
 # ─────────────────────────────────────────
