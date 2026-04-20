@@ -2,11 +2,11 @@ from typing import Any, AsyncGenerator
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-from backend.app.core.config import settings
+from src.backend.app.core.config import settings
 
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=True,
+    echo=settings.DEBUG,
     connect_args={
         "statement_cache_size": 0
     }

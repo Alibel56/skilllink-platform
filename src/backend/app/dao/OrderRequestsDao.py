@@ -4,9 +4,9 @@ from typing import Any, Sequence, Optional
 from sqlalchemy import delete, update, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.db.models import OrderStatus, order_request
-from backend.app.db.models.enums import RequestStatus
-from backend.app.db.models.order_request import OrderRequest
+from src.backend.app.db.models import OrderStatus, order_request
+from src.backend.app.db.models.enums import RequestStatus
+from src.backend.app.db.models.order_request import OrderRequest
 
 class OrderRequestsDao:
 
@@ -76,13 +76,13 @@ class OrderRequestsDao:
         await session.flush()
 
     @staticmethod
-    async def deleteAllByChoose(
-            session: AsyncSession,
-            list_of_order_requests: list[OrderRequest]
+    async def delete_batch(
+        session: AsyncSession,
+        requests: list[OrderRequest],
     ) -> None:
-        for order_request in list_of_order_requests:
-            await session.delete(order_request)
-            await session.flush()
+        for req in requests:
+            await session.delete(req)
+        await session.flush()
 
     @staticmethod
     async def deleteAll(

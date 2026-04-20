@@ -3,14 +3,14 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.dao.SpecialistDao import SpecialistDao
-from backend.app.db.models.orders import Order
-from backend.app.db.models.enums import OrderStatus
-from backend.app.exceptions.NotFoundException import NotFoundException
-from backend.app.schemas.OrderSchema import OrderCreate, OrderUpdate
-from backend.app.dao.OrderDao import OrderDao
-from backend.app.services.a.H3zonestatsservice import H3ZoneStatsService
-from backend.app.validation.OrderValidation import OrderValidation
+from src.backend.app.dao.SpecialistDao import SpecialistDao
+from src.backend.app.db.models.orders import Order
+from src.backend.app.db.models.enums import OrderStatus
+from src.backend.app.exceptions.NotFoundException import NotFoundException
+from src.backend.app.schemas.OrderSchema import OrderCreate, OrderUpdate
+from src.backend.app.dao.OrderDao import OrderDao
+from src.backend.app.services.H3zonestatsservice import H3ZoneStatsService
+from src.backend.app.validation.OrderValidation import OrderValidation
 
 class OrderService:
 

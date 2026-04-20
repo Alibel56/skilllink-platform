@@ -1,8 +1,12 @@
 import uuid
 from datetime import datetime, timezone
+from typing import Optional, TYPE_CHECKING
 
 from sqlalchemy import DateTime
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
+
+if TYPE_CHECKING:
+    from src.backend.app.db.models import Specialist
 
 
 class SpecialistImage(SQLModel, table=True):
@@ -18,4 +22,10 @@ class SpecialistImage(SQLModel, table=True):
         default_factory=lambda: datetime.now(timezone.utc),
         sa_type=DateTime(timezone=True),
         nullable=False
+    )
+
+    # Relationships
+    specialist: Optional["Specialist"] = Relationship(
+        back_populates="images",
+        sa_relationship_kwargs={"lazy": "selectin"}
     )

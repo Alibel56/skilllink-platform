@@ -6,8 +6,8 @@ from sqlalchemy import DateTime
 from sqlmodel import SQLModel, Field, Relationship
 
 if TYPE_CHECKING:
-    from backend.app.db.models.orders import Order
-    from backend.app.db.models.user import User
+    from src.backend.app.db.models.orders import Order
+    from src.backend.app.db.models.user import User
 
 class Message(SQLModel, table=True):
     __tablename__ = "messages"

@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.db.models.address import Address
+from src.backend.app.db.models.address import Address
 
 
 class AddressDao:
@@ -21,24 +21,6 @@ class AddressDao:
             select(Address).where(Address.user_id == user_id)
         )
         return result.scalar_one_or_none()
-
-    @staticmethod
-    async def get_all(
-            session: AsyncSession,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None
-    ) -> Sequence[Address]:
-        query = (
-            select(Address)
-        )
-        if limit is None:
-            limit = 50
-        if offset is None:
-            offset = 0
-        query = query.limit(limit).offset(offset)
-
-        result = await session.execute(query)
-        return result.scalars().all()
 
     @staticmethod
     async def delete(session: AsyncSession, address: Address) -> None:

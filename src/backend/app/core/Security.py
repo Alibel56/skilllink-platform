@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 import bcrypt
 from jose import JWTError, jwt
-from backend.app.core.config import settings
+from src.backend.app.core.config import settings
 
 
 # =========================

@@ -1,11 +1,12 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException, status
 
-from backend.app.dao.UserDao import UserDao
-from backend.app.db.models.user import User
-from backend.app.core.Security import hash_password, verify_password, create_access_token
-from backend.app.schemas.UserSchema import UserCreate
-from backend.app.services.UserService import UserService
-from backend.app.validation.CreateValidation import CreateValidation
+from src.backend.app.dao.UserDao import UserDao
+from src.backend.app.db.models.user import User
+from src.backend.app.core.Security import hash_password, verify_password, create_access_token
+from src.backend.app.schemas.UserSchema import UserCreate
+from src.backend.app.services.UserService import UserService
+from src.backend.app.validation.CreateValidation import CreateValidation
 
 
 class AuthService:
@@ -29,6 +30,11 @@ class AuthService:
             return None
         if not verify_password(password, user.hashed_password):
             return None
+        if not user.is_verified:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Email not confirmed. Please check your inbox.",
+            )
 
         token = create_access_token({"sub": str(user.id)})
         return token

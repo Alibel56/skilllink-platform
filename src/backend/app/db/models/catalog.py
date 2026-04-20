@@ -6,7 +6,7 @@ from sqlalchemy import DateTime
 from sqlmodel import SQLModel, Field, Relationship
 
 if TYPE_CHECKING:
-    from backend.app.db.models.specialist import Specialist
+    from src.backend.app.db.models.specialist import Specialist
 
 class Catalog(SQLModel, table=True):
     __tablename__ = "catalog"

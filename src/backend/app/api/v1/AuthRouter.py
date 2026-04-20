@@ -1,26 +1,24 @@
 import uuid
 from datetime import datetime, timezone
-import secrets
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.core.Redis import redis_client
-from backend.app.core.dependencies import get_current_user
-from backend.app.db.models.user import User
-from backend.app.schemas.UserSchema import UserCreate
-from backend.app.schemas.LoginSchema import LoginRequest
-from backend.app.services.AuthService import AuthService
-from backend.app.services.UserService import UserService
-from backend.app.services.a.AuditService import AuditService
-from backend.app.db.session import get_session
-from backend.app.db.models.enums import LogType, ServiceType
-from backend.app.services.a.TokenBlocklistService import TokenBlocklistService
-from backend.app.core.Security import decode_token
-from backend.app.core.dependencies import bearer_scheme
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import HTTPAuthorizationCredentials
-from backend.app.tasks.email_tasks import send_email_confirmation
-from backend.app.tasks.email_tasks import send_password_reset
-from backend.app.core.Security import decode_token, hash_password
+from sqlalchemy.ext.asyncio import AsyncSession
+import secrets
+
+from src.backend.app.tasks.email_tasks import send_password_reset
+from src.backend.app.core.Redis import redis_client
+from src.backend.app.core.Security import decode_token, hash_password
+from src.backend.app.core.dependencies import bearer_scheme
+from src.backend.app.core.dependencies import get_current_user
+from src.backend.app.db.models.user import User
+from src.backend.app.db.session import get_session
+from src.backend.app.schemas.LoginSchema import LoginRequest, ResetPasswordRequest
+from src.backend.app.schemas.UserSchema import UserCreate
+from src.backend.app.services.AuthService import AuthService
+from src.backend.app.services.UserService import UserService
+from src.backend.app.services.TokenBlocklistService import TokenBlocklistService
+from src.backend.app.tasks.email_tasks import send_email_confirmation
 
 router = APIRouter(
     prefix="/auth",
@@ -69,7 +67,6 @@ async def confirm_email(
 
     user.is_verified = True
     await session.commit()
-
     await redis_client.delete(f"confirm:{token}")
 
     return {"message": "Email confirmed successfully"}
@@ -126,9 +123,6 @@ async def logout(
 
     return {"message": "Successfully logged out"}
 
-import secrets
-from backend.app.tasks.email_tasks import send_password_reset
-
 # 1. Запрос сброса пароля
 @router.post("/forgot-password")
 async def forgot_password(
@@ -162,11 +156,10 @@ async def forgot_password(
 # 2. Применение нового пароля
 @router.post("/reset-password")
 async def reset_password(
-    token: str,
-    new_password: str,
+    data: ResetPasswordRequest,
     session: AsyncSession = Depends(get_session)
 ):
-    user_id = await redis_client.get(f"reset:{token}")
+    user_id = await redis_client.get(f"reset:{data.token}")
     if not user_id:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
 
@@ -174,10 +167,8 @@ async def reset_password(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user.hashed_password = hash_password(new_password)
+    user.hashed_password = hash_password(data.new_password)
     await session.commit()
-
-    # Удаляем токен чтобы нельзя было использовать повторно
-    await redis_client.delete(f"reset:{token}")
+    await redis_client.delete(f"reset:{data.token}")
 
     return {"message": "Password reset successfully"}

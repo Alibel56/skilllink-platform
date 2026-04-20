@@ -6,8 +6,8 @@ from sqlalchemy import UniqueConstraint, DateTime
 from sqlmodel import SQLModel, Field, Relationship
 
 if TYPE_CHECKING:
-    from backend.app.db.models.user import User
-    from backend.app.db.models.specialist import Specialist
+    from src.backend.app.db.models.user import User
+    from src.backend.app.db.models.specialist import Specialist
 
 class Rate(SQLModel, table=True):
     __tablename__ = "rate"

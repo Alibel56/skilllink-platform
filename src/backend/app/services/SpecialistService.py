@@ -3,12 +3,12 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.dao.SpecialistDao import SpecialistDao
-from backend.app.db.models.specialist import Specialist
-from backend.app.schemas.SpecialistSchema import SpecialistCreate, SpecialistUpdate
-from backend.app.services.a.H3zonestatsservice import H3ZoneStatsService
-from backend.app.services.a.h3Service import H3Service
-from backend.app.validation.CreateValidation import CreateValidation
+from src.backend.app.dao.SpecialistDao import SpecialistDao
+from src.backend.app.db.models.specialist import Specialist
+from src.backend.app.schemas.SpecialistSchema import SpecialistCreate, SpecialistUpdate
+from src.backend.app.services.H3zonestatsservice import H3ZoneStatsService
+from src.backend.app.services.h3Service import H3Service
+from src.backend.app.validation.CreateValidation import CreateValidation
 
 
 class SpecialistService:

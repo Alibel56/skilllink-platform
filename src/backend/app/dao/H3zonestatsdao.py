@@ -4,10 +4,10 @@ from typing import Optional, Sequence
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.db.models.h3ZoneStats import H3ZoneStats
-from backend.app.db.models.orders import Order
-from backend.app.db.models.specialist import Specialist
-from backend.app.db.models.enums import OrderStatus
+from src.backend.app.db.models.h3ZoneStats import H3ZoneStats
+from src.backend.app.db.models.orders import Order
+from src.backend.app.db.models.specialist import Specialist
+from src.backend.app.db.models.enums import OrderStatus
 
 
 class H3ZoneStatsDao:

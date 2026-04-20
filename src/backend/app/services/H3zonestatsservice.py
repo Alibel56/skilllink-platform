@@ -3,11 +3,11 @@ from typing import Optional, Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.dao.a.H3zonestatsdao import H3ZoneStatsDao
-from backend.app.dao.SpecialistDao import SpecialistDao
-from backend.app.db.models.h3ZoneStats import H3ZoneStats
-from backend.app.db.models.orders import Order
-from backend.app.db.models.specialist import Specialist
+from src.backend.app.dao.H3zonestatsdao import H3ZoneStatsDao
+from src.backend.app.dao.SpecialistDao import SpecialistDao
+from src.backend.app.db.models.h3ZoneStats import H3ZoneStats
+from src.backend.app.db.models.orders import Order
+from src.backend.app.db.models.specialist import Specialist
 
 
 class H3ZoneStatsService:

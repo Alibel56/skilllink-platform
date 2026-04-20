@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from backend.app.db.models.enums import OrderStatus
+from src.backend.app.db.models.enums import OrderStatus
 
 
 class OrderBase(BaseModel):

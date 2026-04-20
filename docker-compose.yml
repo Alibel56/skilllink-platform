@@ -55,7 +55,23 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: skilllink_migrate
+    env_file: .env
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 5s
+      timeout: 5s
+      retries: 1
   # ─────────────────────────────────────────
   # FastAPI Application
   # ─────────────────────────────────────────
@@ -74,6 +90,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/')\""]
       interval: 30s
@@ -92,10 +110,12 @@ services:
     container_name: skilllink_celery_worker
     restart: unless-stopped
     env_file: .env
-    command: ["celery", "-A", "backend.app.tasks.celery_app.celery_app", "worker", "--loglevel=info", "--concurrency=4"]
+    command: ["celery", "-A", "src.backend.app.tasks.celery_app.celery_app", "worker", "--loglevel=info", "--concurrency=4"]
     depends_on:
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
   # ─────────────────────────────────────────
   # Celery Beat (планировщик задач)
@@ -108,10 +128,12 @@ services:
     container_name: skilllink_celery_beat
     restart: unless-stopped
     env_file: .env
-    command: ["celery", "-A", "backend.app.tasks.celery_app.celery_app", "beat", "--loglevel=info", "--schedule=/tmp/celerybeat-schedule"]
+    command: ["celery", "-A", "src.backend.app.tasks.celery_app.celery_app", "beat", "--loglevel=info", "--schedule=/tmp/celerybeat-schedule"]
     depends_on:
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
   # ─────────────────────────────────────────
   # Flower — мониторинг Celery задач

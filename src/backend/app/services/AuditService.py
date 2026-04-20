@@ -3,9 +3,9 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.db.models.auditLog import AuditLog
-from backend.app.db.models.enums import LogType, ServiceType
-from backend.app.dao.a.AuditDao import AuditDao
+from src.backend.app.db.models.auditLog import AuditLog
+from src.backend.app.db.models.enums import LogType, ServiceType
+from src.backend.app.dao.AuditDao import AuditDao
 
 class AuditService:
 

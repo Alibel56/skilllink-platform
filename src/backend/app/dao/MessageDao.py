@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from backend.app.db.models.message import Message
+from src.backend.app.db.models.message import Message
 
 class MessageDao:
 

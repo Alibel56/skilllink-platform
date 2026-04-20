@@ -6,16 +6,16 @@ import uuid
 from sqlalchemy import DateTime
 from sqlmodel import SQLModel, Field, Relationship
 
-from backend.app.db.models.enums import UserRole
+from src.backend.app.db.models.enums import UserRole
 if TYPE_CHECKING:
-    from backend.app.db.models.address import Address
-    from backend.app.db.models.specialist import Specialist
-    from backend.app.db.models.orders import Order
-    from backend.app.db.models.rate import Rate
-    from backend.app.db.models.comment import Comment
-    from backend.app.db.models.auditLog import AuditLog
-    from backend.app.db.models.message import Message
-    from backend.app.db.models.order_request import OrderRequest
+    from src.backend.app.db.models.address import Address
+    from src.backend.app.db.models.specialist import Specialist
+    from src.backend.app.db.models.orders import Order
+    from src.backend.app.db.models.rate import Rate
+    from src.backend.app.db.models.comment import Comment
+    from src.backend.app.db.models.auditLog import AuditLog
+    from src.backend.app.db.models.message import Message
+    from src.backend.app.db.models.order_request import OrderRequest
 
 class User(SQLModel, table=True):
     __tablename__ = "users"

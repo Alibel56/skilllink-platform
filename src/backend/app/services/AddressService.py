@@ -3,11 +3,11 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.db.models.address import Address
-from backend.app.schemas.AddressSchema import AddressCreate
-from backend.app.services.a.h3Service import H3Service
-from backend.app.dao.a.AddressDao import AddressDao
-from backend.app.validation.CreateValidation import CreateValidation
+from src.backend.app.db.models.address import Address
+from src.backend.app.schemas.AddressSchema import AddressCreate
+from src.backend.app.services.h3Service import H3Service
+from src.backend.app.dao.AddressDao import AddressDao
+from src.backend.app.validation.CreateValidation import CreateValidation
 
 class AddressService:
 
@@ -38,15 +38,11 @@ class AddressService:
         result = await AddressDao.get_by_user_id(session, user_id)
         return result
 
-    @staticmethod
-    async def get_all(
-            session: AsyncSession,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None
-    ) -> list[Address]:
-        result = await AddressDao.get_all(session,limit,offset)
-        return result
 
     @staticmethod
-    async def delete(session: AsyncSession, address: Address) -> None:
+    async def delete(
+            session: AsyncSession,
+            user_id: uuid.UUID
+    ) -> None:
+        address = await AddressDao.get_by_user_id(session, user_id)
         await AddressDao.delete(session, address)

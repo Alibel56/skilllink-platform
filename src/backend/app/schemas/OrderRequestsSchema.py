@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from backend.app.db.models.enums import RequestStatus
+from src.backend.app.db.models.enums import RequestStatus
 
 
 class OrderRequestsBase(BaseModel):

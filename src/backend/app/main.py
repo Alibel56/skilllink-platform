@@ -1,27 +1,35 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.responses import JSONResponse
 from sqlmodel import SQLModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 # Все модели должны быть импортированы ДО вызова create_all
-import backend.app.db.models  # noqa: F401
-from backend.app.api.v1.AuthRouter import router as auth_router
-from backend.app.api.v1.CatalogRouter import router as catalog_router
-from backend.app.api.v1.OrderRouter import router as order_router
-from backend.app.api.v1.SpecialistRouter import router as specialist_router
-from backend.app.api.v1.UserRouter import router as user_router
-from backend.app.api.v1.RequestsRouter import router as request_router
-from backend.app.api.v1.FileRouter import router as file_router
-from backend.app.core.Redis import redis_client
-from backend.app.db.session import engine
-from backend.app.exceptions.NotFoundException import NotFoundException
-from backend.app.exceptions.ValidationException import ValidationException
-from backend.app.middleware.middleware import LoggingMiddleware
-from backend.app.middleware.rate_limit_middleware import RateLimitMiddleware
-from backend.app.middleware.profiling_middleware import ProfilingMiddleware, get_latency_report
+import src.backend.app.db.models
+from src.backend.app.api.v1.AuthRouter import router as auth_router
+from src.backend.app.api.v1.CatalogRouter import router as catalog_router
+from src.backend.app.api.v1.OrderRouter import router as order_router
+from src.backend.app.api.v1.SpecialistRouter import router as specialist_router
+from src.backend.app.api.v1.UserRouter import router as user_router
+from src.backend.app.api.v1.RequestsRouter import router as request_router
+from src.backend.app.api.v1.FileRouter import router as file_router
+from src.backend.app.api.v1.AccreditationRouter import router as accreditation_router
+from src.backend.app.api.v1.AddressRouter import router as address_router
+from src.backend.app.api.v1.CommentRouter import router as comment_router
+from src.backend.app.api.v1.MessageRouter import router as message_router
+from src.backend.app.api.v1.RateRouter import router as rate_router
+
+from src.backend.app.core.Redis import redis_client
+from src.backend.app.core.dependencies import require_admin
+from src.backend.app.db.models import User
+from src.backend.app.db.session import engine
+from src.backend.app.exceptions.NotFoundException import NotFoundException
+from src.backend.app.exceptions.ValidationException import ValidationException
+from src.backend.app.middleware.middleware import LoggingMiddleware
+from src.backend.app.middleware.rate_limit_middleware import RateLimitMiddleware
+from src.backend.app.middleware.profiling_middleware import ProfilingMiddleware, get_latency_report
 
 
 # -------------------------
@@ -29,9 +37,6 @@ from backend.app.middleware.profiling_middleware import ProfilingMiddleware, get
 # -------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
-
     try:
         await redis_client.ping()
         print("Redis connected ✅")
@@ -114,7 +119,13 @@ app.include_router(specialist_router,     prefix="/api/v1")
 app.include_router(order_router,          prefix="/api/v1")
 app.include_router(catalog_router,        prefix="/api/v1")
 app.include_router(request_router,        prefix="/api/v1")
-app.include_router(file_router,           prefix="/api/v1")
+app.include_router(file_router,          prefix="/api/v1")
+app.include_router(accreditation_router, prefix="/api/v1")
+app.include_router(address_router,       prefix="/api/v1")
+app.include_router(comment_router,       prefix="/api/v1")
+app.include_router(message_router,       prefix="/api/v1")
+app.include_router(rate_router,          prefix="/api/v1")
+
 
 
 # -------------------------
@@ -125,5 +136,5 @@ async def health_check():
     return {"status": "ok", "app": "SkillLink API"}
 
 @app.get("/api/v1/admin/profiling", tags=["Admin"])
-async def profiling_report():
+async def profiling_report(current_user: User = Depends(require_admin)):
     return get_latency_report()

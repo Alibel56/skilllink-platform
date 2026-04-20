@@ -2,11 +2,11 @@ import uuid
 from typing import Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 
-from backend.app.db.models.enums import OrderStatus
-from backend.app.db.models.orders import Order
-from backend.app.db.models.rate import Rate
+from src.backend.app.db.models.enums import OrderStatus
+from src.backend.app.db.models.orders import Order
+from src.backend.app.db.models.rate import Rate
 
 
 class RateDao:
@@ -37,9 +37,9 @@ class RateDao:
         specialist_id: uuid.UUID
     ) -> Sequence[Rate]:
         result = await session.execute(
-            select(Rate).where(Rate.specialist_id == specialist_id)
+            select(func.avg(Rate.rate)).where(Rate.specialist_id == specialist_id)
         )
-        return result.scalars().all()
+        return result.scalar_one_or_none()
 
     @staticmethod
     async def delete(

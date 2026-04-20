@@ -1,7 +1,7 @@
 from celery import Celery
 from celery.schedules import crontab
 
-from backend.app.core.config import settings
+from src.backend.app.core.config import settings
 
 REDIS_URL = f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/0"
 
@@ -10,15 +10,16 @@ celery_app = Celery(
     broker=REDIS_URL,
     backend=REDIS_URL,
     include=[
-        "backend.app.tasks.email_tasks",
-        "backend.app.tasks.image_tasks",
-        "backend.app.tasks.order_tasks"
+        "src.backend.app.tasks.email_tasks",
+        "src.backend.app.tasks.image_tasks",
+        "src.backend.app.tasks.order_tasks",
+        "src.backend.app.tasks.pdf_tasks",
     ],
 )
 celery_app.conf.beat_schedule = {
     "cancel-expired-orders": {
         "task": "tasks.cancel_expired_orders",
-        "schedule": 10.0,
+        "schedule": crontab(hour=3, minute=0),  # каждый день в 03:00 UTC
     }
 }
 

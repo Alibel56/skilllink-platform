@@ -5,8 +5,8 @@ from typing import Sequence, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from backend.app.db.models.enums import OrderStatus
-from backend.app.db.models.orders import Order
+from src.backend.app.db.models.enums import OrderStatus
+from src.backend.app.db.models.orders import Order
 
 class OrderDao:
 

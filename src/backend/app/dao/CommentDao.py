@@ -4,10 +4,10 @@ from typing import Optional, Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, Select
 
-from backend.app.db.models.comment import Comment
-from backend.app.db.models.enums import OrderStatus
-from backend.app.db.models.orders import Order
-from backend.app.schemas.CommentSchema import CommentFilter
+from src.backend.app.db.models.comment import Comment
+from src.backend.app.db.models.enums import OrderStatus
+from src.backend.app.db.models.orders import Order
+from src.backend.app.schemas.CommentSchema import CommentFilter
 
 
 class CommentDao:
@@ -19,17 +19,19 @@ class CommentDao:
         return comment
 
     @staticmethod
-    async def get_by_id(
+    async def get_user_comment(
         session: AsyncSession,
-        specialist_id: uuid.UUID,
-        filters: CommentFilter
-    ) -> Sequence[Comment]:
+        user_id: uuid.UUID,
+        specialist_id: uuid.UUID
+    ) -> Optional[Comment]:
         query = (
-            select(Comment).where(Comment.specialist_id == specialist_id)
+            select(Comment).where(
+                Comment.specialist_id == specialist_id,
+                Comment.user_id == user_id
+            )
         )
-        query = CommentDao.apply_filters(query, filters)
         result = await session.execute(query)
-        return result.scalars().all()
+        return result.scalar_one_or_none()
 
     @staticmethod
     async def get_all(
@@ -39,14 +41,10 @@ class CommentDao:
             offset: Optional[int] = None
     ) -> Sequence[Comment]:
         query = (
-            select(Comment).order_by(Comment.specialist_id)
+            select(Comment)
         )
         query = CommentDao.apply_filters(query, filters)
-        if limit is None:
-            limit = 50
-        if offset is None:
-            offset = 0
-        query = query.limit(limit).offset(offset)
+        query = query.limit(limit or 50).offset(offset or 0)
         result = await session.execute(query)
         return result.scalars().all()
 
@@ -76,8 +74,8 @@ class CommentDao:
     @staticmethod
     def apply_filters(query: Select, filters: CommentFilter) -> Select:
 
-        if filters.user_id:
-            query = query.where(Comment.user_id == filters.user_id)
+        if filters.specialist_id:
+            query = query.where(Comment.specialist_id == filters.specialist_id)
 
         if filters.date_from:
             query = query.where(Comment.created_at >= filters.date_from)

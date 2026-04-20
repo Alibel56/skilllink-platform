@@ -3,10 +3,10 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.db.models.catalog import Catalog
-from backend.app.schemas.CatalogSchema import CatalogCreate, CatalogUpdate, CatalogFilter
-from backend.app.dao.a.CatalogDao import CatalogDao
-from backend.app.validation.CreateValidation import CreateValidation
+from src.backend.app.db.models.catalog import Catalog
+from src.backend.app.schemas.CatalogSchema import CatalogCreate, CatalogUpdate, CatalogFilter
+from src.backend.app.dao.CatalogDao import CatalogDao
+from src.backend.app.validation.CreateValidation import CreateValidation
 
 class CatalogService:
 
@@ -17,7 +17,6 @@ class CatalogService:
         specialist_id: uuid.UUID,
         data: CatalogCreate
     ) -> Catalog:
-
         await CreateValidation.is_valid_catalog(session, specialist_id, data)
 
         item = Catalog(specialist_id=specialist_id, **data.model_dump())
@@ -38,6 +37,13 @@ class CatalogService:
     @staticmethod
     async def delete(session: AsyncSession, item: Catalog) -> None:
         await CatalogDao.delete(session, item)
+
+    @staticmethod
+    async def get_by_id(
+        session: AsyncSession,
+        catalog_id: uuid.UUID,
+    ) -> Optional[Catalog]:
+        return await CatalogDao.get_by_id(session, catalog_id)
 
     @staticmethod
     async def get_by_specialist_id(session: AsyncSession, specialist_id: uuid.UUID, filters: CatalogFilter) -> list[Catalog]:

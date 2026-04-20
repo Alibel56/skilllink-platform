@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.db.models.auditLog import AuditLog
+from src.backend.app.db.models.auditLog import AuditLog
 
 
 class AuditDao:

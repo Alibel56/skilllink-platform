@@ -4,20 +4,20 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.core.dependencies import (
+from src.backend.app.core.dependencies import (
     require_admin,
     require_specialist,
     require_client, get_current_user
 )
 import base64
 from fastapi import UploadFile, File
-from backend.app.tasks.image_tasks import compress_and_store_image
-from backend.app.core.config import settings
-from backend.app.db.models.enums import ServiceType,LogType
-from backend.app.db.models.user import User
-from backend.app.db.session import get_session
-from backend.app.schemas.SpecialistSchema import SpecialistCreate, SpecialistUpdate, SpecialistDto
-from backend.app.services.SpecialistService import SpecialistService
+from src.backend.app.tasks.image_tasks import compress_and_store_image
+from src.backend.app.core.config import settings
+from src.backend.app.db.models.enums import ServiceType,LogType
+from src.backend.app.db.models.user import User
+from src.backend.app.db.session import get_session
+from src.backend.app.schemas.SpecialistSchema import SpecialistCreate, SpecialistUpdate, SpecialistDto
+from src.backend.app.services.SpecialistService import SpecialistService
 
 router = APIRouter(
     prefix="/specialists",
@@ -95,12 +95,8 @@ async def deactivate_specialist(
     current_user: User = Depends(require_admin)
 ):
     specialist = await SpecialistService.get_by_id(session, specialist_id)
-
     if not specialist:
         raise HTTPException(status_code=404, detail="Specialist not found")
-
-    if specialist.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not allowed to deactivate")
 
     result = await SpecialistService.deactivate(session, specialist)
 

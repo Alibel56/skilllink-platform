@@ -1,6 +1,6 @@
 import logging
 
-from backend.app.core.Redis import redis_client
+from src.backend.app.core.Redis import redis_client
 
 logger = logging.getLogger(__name__)
 

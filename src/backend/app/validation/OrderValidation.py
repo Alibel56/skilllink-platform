@@ -1,8 +1,8 @@
 import uuid
 from typing import Any
 
-from backend.app.db.models import Order, OrderStatus, Specialist
-from backend.app.exceptions.ValidationException import ValidationException
+from src.backend.app.db.models import Order, OrderStatus, Specialist
+from src.backend.app.exceptions.ValidationException import ValidationException
 
 class OrderValidation:
 

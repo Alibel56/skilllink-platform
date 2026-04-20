@@ -5,10 +5,10 @@ import uuid
 from sqlalchemy import DateTime
 from sqlmodel import SQLModel, Field, Relationship
 
-from backend.app.db.models.enums import LogType, ServiceType
+from src.backend.app.db.models.enums import LogType, ServiceType
 
 if TYPE_CHECKING:
-    from backend.app.db.models.user import User
+    from src.backend.app.db.models.user import User
 
 class AuditLog(SQLModel, table=True):
     __tablename__ = "audit_log"

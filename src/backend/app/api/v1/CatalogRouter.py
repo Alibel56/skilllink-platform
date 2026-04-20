@@ -3,14 +3,14 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.core.dependencies import (
-    require_specialist, require_client, require_any
+from src.backend.app.core.dependencies import (
+    require_specialist, require_client
 )
-from backend.app.db.models.user import User
-from backend.app.db.session import get_session
-from backend.app.schemas.CatalogSchema import CatalogCreate, CatalogUpdate, CatalogFilter, CatalogDto
-from backend.app.services.a.CatalogService import CatalogService
-from backend.app.services.SpecialistService import SpecialistService
+from src.backend.app.db.models.user import User
+from src.backend.app.db.session import get_session
+from src.backend.app.schemas.CatalogSchema import CatalogCreate, CatalogUpdate, CatalogFilter, CatalogDto
+from src.backend.app.services.CatalogService import CatalogService
+from src.backend.app.services.SpecialistService import SpecialistService
 
 router = APIRouter(
     prefix="/catalog",
@@ -76,22 +76,15 @@ async def update_catalog_item(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(require_specialist)
 ):
-
-    item = await CatalogService.get_all(session, CatalogFilter())
-
-    item = next((i for i in item if i.id == catalog_id), None)
-
+    item = await CatalogService.get_by_id(session, catalog_id)
     if not item:
         raise HTTPException(404, f"Catalog item {catalog_id} not found")
 
     specialist = await SpecialistService.get_by_user_id(session, current_user.id)
+    if not specialist or item.specialist_id != specialist.id:
+        raise HTTPException(403, "Not allowed to update this catalog item")
 
-    if item.specialist_id != specialist.id:
-        raise HTTPException(403, "Not allowed to update catalog item")
-
-    updated = await CatalogService.update(session, item, data)
-
-    return updated
+    return await CatalogService.update(session, item, data)
 
 
 # ─────────────────────────────────────────
@@ -105,19 +98,13 @@ async def delete_catalog_item(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(require_specialist)
 ):
-
-    items = await CatalogService.get_all(session, CatalogFilter())
-
-    item = next((i for i in items if i.id == catalog_id), None)
-
+    item = await CatalogService.get_by_id(session, catalog_id)
     if not item:
-        raise HTTPException(404, f"Catalog item not found")
+        raise HTTPException(404, "Catalog item not found")
 
     specialist = await SpecialistService.get_by_user_id(session, current_user.id)
-
-    if item.specialist_id != specialist.id:
-        raise HTTPException(403, "Not allowed to delete catalog item")
+    if not specialist or item.specialist_id != specialist.id:
+        raise HTTPException(403, "Not allowed to delete this catalog item")
 
     await CatalogService.delete(session, item)
-
     return {"message": "Catalog item deleted"}

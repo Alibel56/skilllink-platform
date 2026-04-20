@@ -4,8 +4,8 @@ from typing import Sequence, Optional
 from sqlalchemy import select, Select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.db.models.catalog import Catalog
-from backend.app.schemas.CatalogSchema import CatalogFilter
+from src.backend.app.db.models.catalog import Catalog
+from src.backend.app.schemas.CatalogSchema import CatalogFilter
 
 
 class CatalogDao:
@@ -28,6 +28,13 @@ class CatalogDao:
     async def delete(session: AsyncSession, item: Catalog) -> None:
         await session.delete(item)
         await session.flush()
+
+    @staticmethod
+    async def get_by_id(session: AsyncSession, catalog_id: uuid.UUID) -> Optional[Catalog]:
+        result = await session.execute(
+            select(Catalog).where(Catalog.id == catalog_id)
+        )
+        return result.scalar_one_or_none()
 
     @staticmethod
     async def get_by_specialist_id(

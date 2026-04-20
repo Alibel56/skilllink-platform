@@ -3,16 +3,16 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.core.dependencies import (
+from src.backend.app.core.dependencies import (
     get_current_user,
     require_any,
     require_client
 )
-from backend.app.db.models import OrderRequest
-from backend.app.db.models.enums import ServiceType, RequestStatus, LogType
-from backend.app.db.models.user import User
-from backend.app.db.session import get_session
-from backend.app.services.OrderRequestsService import OrderRequestsService
+from src.backend.app.db.models import OrderRequest
+from src.backend.app.db.models.enums import ServiceType, RequestStatus, LogType
+from src.backend.app.db.models.user import User
+from src.backend.app.db.session import get_session
+from src.backend.app.services.OrderRequestsService import OrderRequestsService
 
 router = APIRouter(
     prefix="/requests",

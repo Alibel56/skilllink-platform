@@ -2,17 +2,17 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.dao.a.AddressDao import AddressDao
-from backend.app.dao.a.CatalogDao import CatalogDao
-from backend.app.dao.UserDao import UserDao
-from backend.app.dao.SpecialistDao import SpecialistDao
-from backend.app.dao.a.RateDao import RateDao
-from backend.app.dao.a.CommentDao import CommentDao
-from backend.app.schemas.CatalogSchema import CatalogCreate, CatalogFilter
-from backend.app.schemas.CommentSchema import CommentCreate, CommentFilter
-from backend.app.schemas.RateSchema import RateCreate
-from backend.app.schemas.UserSchema import UserCreate
-from backend.app.exceptions.ValidationException import ValidationException
+from src.backend.app.dao.AddressDao import AddressDao
+from src.backend.app.dao.CatalogDao import CatalogDao
+from src.backend.app.dao.UserDao import UserDao
+from src.backend.app.dao.SpecialistDao import SpecialistDao
+from src.backend.app.dao.RateDao import RateDao
+from src.backend.app.dao.CommentDao import CommentDao
+from src.backend.app.schemas.CatalogSchema import CatalogCreate, CatalogFilter
+from src.backend.app.schemas.CommentSchema import CommentCreate
+from src.backend.app.schemas.RateSchema import RateCreate
+from src.backend.app.schemas.UserSchema import UserCreate
+from src.backend.app.exceptions.ValidationException import ValidationException
 
 class CreateValidation:
 
@@ -91,13 +91,10 @@ class CreateValidation:
             has_order: bool
     ) -> None:
         errors = []
-        filters = CommentFilter(
-            user_id = user_id
-        )
         if not has_order:
             errors.append("You can only comment a specialist after a completed order")
 
-        if await CommentDao.get_by_id(session, data.specialist_id, filters):
+        if await CommentDao.get_user_comment(session, user_id, data.specialist_id):
             errors.append("You have already commented this specialist")
 
         if errors:

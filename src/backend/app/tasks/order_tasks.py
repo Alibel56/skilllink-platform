@@ -3,9 +3,9 @@ from datetime import datetime, timezone, timedelta
 
 import psycopg2
 
-from backend.app.tasks.celery_app import celery_app
-from backend.app.core.config import settings
-from backend.app.db.models.enums import OrderStatus
+from src.backend.app.tasks.celery_app import celery_app
+from src.backend.app.core.config import settings
+from src.backend.app.db.models.enums import OrderStatus
 
 logger = logging.getLogger("skilllink.tasks")
 

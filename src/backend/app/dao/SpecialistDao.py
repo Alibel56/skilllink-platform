@@ -5,10 +5,10 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col
 
-from backend.app.dao.UserDao import UserDao
-from backend.app.db.models import User, UserRole
-from backend.app.db.models.catalog import Catalog
-from backend.app.db.models.specialist import Specialist
+from src.backend.app.dao.UserDao import UserDao
+from src.backend.app.db.models import User, UserRole
+from src.backend.app.db.models.catalog import Catalog
+from src.backend.app.db.models.specialist import Specialist
 
 
 class SpecialistDao:

@@ -3,10 +3,10 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.schemas.OrderRequestsSchema import OrderRequestCreate
-from backend.app.db.models.order_request import OrderRequest
-from backend.app.dao.OrderRequestsDao import OrderRequestsDao
-from backend.app.services.OrderService import OrderService
+from src.backend.app.schemas.OrderRequestsSchema import OrderRequestCreate
+from src.backend.app.db.models.order_request import OrderRequest
+from src.backend.app.dao.OrderRequestsDao import OrderRequestsDao
+from src.backend.app.services.OrderService import OrderService
 
 
 class OrderRequestsService:
@@ -55,11 +55,11 @@ class OrderRequestsService:
         await OrderRequestsDao.delete(session, request)
 
     @staticmethod
-    async def deleteAllByChoose(
+    async def delete_batch(
             session: AsyncSession,
-            requests: list[OrderRequest]
+            requests: list[OrderRequest],
     ) -> None:
-        await OrderRequestsDao.deleteAllByChoose(session, requests)
+        await OrderRequestsDao.delete_batch(session, requests)
 
     @staticmethod
     async def deleteAll(

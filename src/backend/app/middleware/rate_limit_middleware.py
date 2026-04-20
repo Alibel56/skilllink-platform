@@ -4,7 +4,7 @@ from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from backend.app.core.Redis import redis_client
+from src.backend.app.core.Redis import redis_client
 
 WRITE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
@@ -13,6 +13,15 @@ LIMIT_PER_MIN = 60
 LIMIT_PER_HOUR = 1000
 LIMIT_WRITE_PER_HOUR = 20
 
+_TRUSTED_PROXIES = {"127.0.0.1", "::1"}
+
+def _get_client_ip(request: Request) -> str:
+    direct_ip = request.client.host if request.client else "unknown"
+    if direct_ip in _TRUSTED_PROXIES:
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+    return direct_ip
 
 async def _sliding_window(key: str, window_sec: int, limit: int) -> tuple[bool, int]:
     now = time.time()
@@ -34,10 +43,7 @@ async def _sliding_window(key: str, window_sec: int, limit: int) -> tuple[bool, 
 class RateLimitMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next) -> Response:
-        forwarded = request.headers.get("X-Forwarded-For")
-        ip = forwarded.split(",")[0].strip() if forwarded else (
-            request.client.host if request.client else "unknown"
-        )
+        ip = _get_client_ip(request)
         method = request.method
 
         # 1. Лимит 60 req/min

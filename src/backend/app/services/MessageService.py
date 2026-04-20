@@ -2,13 +2,13 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.dao.OrderDao import OrderDao
-from backend.app.dao.SpecialistDao import SpecialistDao
-from backend.app.db.models.message import Message
-from backend.app.exceptions.NotFoundException import NotFoundException
-from backend.app.exceptions.ValidationException import ValidationException
-from backend.app.schemas.MessageSchema import MessageCreate
-from backend.app.dao.a.MessageDao import MessageDao
+from src.backend.app.dao.OrderDao import OrderDao
+from src.backend.app.dao.SpecialistDao import SpecialistDao
+from src.backend.app.db.models.message import Message
+from src.backend.app.exceptions.NotFoundException import NotFoundException
+from src.backend.app.exceptions.ValidationException import ValidationException
+from src.backend.app.schemas.MessageSchema import MessageCreate
+from src.backend.app.dao.MessageDao import MessageDao
 
 class MessageService:
 

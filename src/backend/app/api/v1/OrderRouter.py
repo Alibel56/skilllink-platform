@@ -4,19 +4,19 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.core.dependencies import (
+from src.backend.app.core.dependencies import (
     require_client,
     require_specialist,
     require_any
 )
-from backend.app.db.models.enums import ServiceType, OrderStatus, LogType
-from backend.app.db.models.user import User
-from backend.app.db.session import get_session
-from backend.app.schemas.OrderRequestsSchema import OrderRequestCreate
-from backend.app.schemas.OrderSchema import OrderCreate, OrderUpdate, OrderDto
-from backend.app.services.OrderService import OrderService
-from backend.app.services.OrderRequestsService import OrderRequestsService
-from backend.app.services.SpecialistService import SpecialistService
+from src.backend.app.db.models.enums import ServiceType, OrderStatus, LogType
+from src.backend.app.db.models.user import User
+from src.backend.app.db.session import get_session
+from src.backend.app.schemas.OrderRequestsSchema import OrderRequestCreate
+from src.backend.app.schemas.OrderSchema import OrderCreate, OrderUpdate, OrderDto
+from src.backend.app.services.OrderService import OrderService
+from src.backend.app.services.OrderRequestsService import OrderRequestsService
+from src.backend.app.services.SpecialistService import SpecialistService
 
 router = APIRouter(
     prefix="/orders",
@@ -193,7 +193,7 @@ async def complete_order(
     if not order:
         raise HTTPException(404, "Order not found")
     if order.user_id != current_user.id:
-        raise HTTPException(404, "Not allowed to complete order")
+        raise HTTPException(403, "Not allowed to complete order")
 
     result = await OrderService.complete_order(
         session,
@@ -222,14 +222,14 @@ async def cancel_order(
         raise HTTPException(404, "Order not found")
 
     if order.user_id != current_user.id:
-        raise HTTPException(404, "Not allowed to cancel order")
+        raise HTTPException(403, "Not allowed to cancel order")
 
     result = await OrderService.cancel_order(
         session,
         order,
         current_user.id
     )
-    return {"message": "Order canceled}"}
+    return {"message": "Order cancelled successfully}"}
 
 
 # ─────────────────────────────────────────

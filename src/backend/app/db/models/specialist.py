@@ -6,13 +6,14 @@ from sqlalchemy import DateTime
 from sqlmodel import SQLModel, Field, Relationship
 
 if TYPE_CHECKING:
-    from backend.app.db.models.user import User
-    from backend.app.db.models.catalog import Catalog
-    from backend.app.db.models.accreditation import Accreditation
-    from backend.app.db.models.orders import Order
-    from backend.app.db.models.rate import Rate
-    from backend.app.db.models.comment import Comment
-    from backend.app.db.models.order_request import OrderRequest
+    from src.backend.app.db.models.user import User
+    from src.backend.app.db.models.catalog import Catalog
+    from src.backend.app.db.models.accreditation import Accreditation
+    from src.backend.app.db.models.orders import Order
+    from src.backend.app.db.models.rate import Rate
+    from src.backend.app.db.models.comment import Comment
+    from src.backend.app.db.models.order_request import OrderRequest
+    from src.backend.app.db.models.specialist_image import SpecialistImage
 
 class Specialist(SQLModel, table=True):
     __tablename__ = "specialist"
@@ -60,6 +61,11 @@ class Specialist(SQLModel, table=True):
     )
 
     order_requests: list["OrderRequest"] = Relationship(
+        back_populates="specialist",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    images: list["SpecialistImage"] = Relationship(
         back_populates="specialist",
         sa_relationship_kwargs={"lazy": "selectin"}
     )

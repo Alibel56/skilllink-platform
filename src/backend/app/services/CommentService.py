@@ -3,10 +3,11 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.db.models.comment import Comment
-from backend.app.schemas.CommentSchema import CommentCreate, CommentFilter
-from backend.app.dao.a.CommentDao import CommentDao
-from backend.app.validation.CreateValidation import CreateValidation
+from src.backend.app.db.models.comment import Comment
+from src.backend.app.exceptions.NotFoundException import NotFoundException
+from src.backend.app.schemas.CommentSchema import CommentCreate, CommentFilter
+from src.backend.app.dao.CommentDao import CommentDao
+from src.backend.app.validation.CreateValidation import CreateValidation
 
 class CommentService:
 
@@ -26,12 +27,12 @@ class CommentService:
         return result
 
     @staticmethod
-    async def get_by_id(
+    async def get_user_comment(
         session: AsyncSession,
-        specialist_id: uuid.UUID,
-        filters: CommentFilter
-    ) -> list[Comment]:
-        result = await CommentDao.get_by_id(session, specialist_id, filters)
+        user_id: uuid.UUID,
+        specialist_id: uuid.UUID
+    ) -> Optional[Comment]:
+        result = await CommentDao.get_user_comment(session, user_id, specialist_id)
         return result
 
     @staticmethod
@@ -45,5 +46,12 @@ class CommentService:
         return result
 
     @staticmethod
-    async def delete(session: AsyncSession, comment: Comment) -> None:
+    async def delete(
+            session: AsyncSession,
+            user_id: uuid.UUID,
+            specialist_id: uuid.UUID
+    ) -> None:
+        comment = await CommentDao.get_user_comment(session, user_id, specialist_id)
+        if comment is None:
+            raise NotFoundException("Comment not found")
         await CommentDao.delete(session, comment)

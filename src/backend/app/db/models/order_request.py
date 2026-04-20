@@ -5,12 +5,12 @@ import uuid
 from sqlalchemy import DateTime, UniqueConstraint
 from sqlmodel import SQLModel, Field, Relationship
 
-from backend.app.db.models.enums import RequestStatus
+from src.backend.app.db.models.enums import RequestStatus
 
 if TYPE_CHECKING:
-    from backend.app.db.models.user import User
-    from backend.app.db.models.specialist import Specialist
-    from backend.app.db.models.orders import Order
+    from src.backend.app.db.models.user import User
+    from src.backend.app.db.models.specialist import Specialist
+    from src.backend.app.db.models.orders import Order
 
 class OrderRequest(SQLModel, table=True):
     __tablename__ = "order_requests"

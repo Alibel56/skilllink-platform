@@ -3,10 +3,10 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.db.models.user import User
-from backend.app.schemas.UserSchema import UserUpdate
-from backend.app.dao.UserDao import UserDao
-from backend.app.core.Security import hash_password
+from src.backend.app.db.models.user import User
+from src.backend.app.schemas.UserSchema import UserUpdate
+from src.backend.app.dao.UserDao import UserDao
+from src.backend.app.core.Security import hash_password
 
 
 class UserService:

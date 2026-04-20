@@ -3,7 +3,7 @@ from datetime import datetime, date
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field
-from backend.app.db.models.enums import UserRole
+from src.backend.app.db.models.enums import UserRole
 
 class UserBase(BaseModel):
     name: str

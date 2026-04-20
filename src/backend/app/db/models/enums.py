@@ -29,3 +29,8 @@ class ServiceType(str, Enum):
     SPECIALIST = "specialist-service"
     USER = "user-service"
     HTTP = "http-middleware"
+    FILE = "file-service"
+    ADDRESS = "address-service"
+    COMMENT = "comment-service"
+    MESSAGE = "message-service"
+    RATE = "rate-service"

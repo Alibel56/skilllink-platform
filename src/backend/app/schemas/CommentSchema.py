@@ -18,6 +18,6 @@ class CommentDto(CommentBase):
     model_config = {"from_attributes": True}
 
 class CommentFilter(BaseModel):
-    user_id: uuid.UUID | None = None
+    specialist_id: uuid.UUID | None = None
     date_from: datetime | None = None
     date_to: datetime | None = None

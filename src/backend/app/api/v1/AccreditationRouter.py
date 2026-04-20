@@ -12,23 +12,20 @@ from fastapi import UploadFile, File
 from src.backend.app.db.session import get_session
 from src.backend.app.services.FileService import FileService
 from src.backend.app.services.SpecialistService import SpecialistService
-from src.backend.app.tasks.image_tasks import compress_and_store_image
+from src.backend.app.tasks.pdf_tasks import compress_and_store_pdf
 from src.backend.app.core.config import settings
 from src.backend.app.db.models.user import User
 
-router = APIRouter(
-    prefix="/files",
-    tags=["Files"]
-)
+router = APIRouter(prefix="/files", tags=["Accreditation"])
 
-@router.post("/upload/avatar")
-async def upload_avatar(
+@router.post("/upload/accreditation")
+async def upload_accreditation(
     file: UploadFile = File(...),
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(require_specialist),
 ):
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Only image files accepted.")
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="Only PDF files accepted.")
 
     raw = await file.read()
     if len(raw) > 10 * 1024 * 1024:
@@ -38,19 +35,19 @@ async def upload_avatar(
     if not specialist:
         raise HTTPException(status_code=404, detail="Specialist profile not found.")
 
-    compress_and_store_image.delay(
+    compress_and_store_pdf.delay(
         specialist_id=str(specialist.id),
-        image_b64=base64.b64encode(raw).decode(),
+        pdf_b64=base64.b64encode(raw).decode(),
         db_url=settings.DATABASE_URL_SYNC,
     )
 
     return {
-        "message": "Image queued for compression.",
+        "message": "PDF queued for processing.",
         "original_size_bytes": len(raw),
     }
 
-@router.get("/get/avatar")
-async def get_avatar(
+@router.get("/get/accreditation")
+async def get_accreditation(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(require_any),
 ):
@@ -59,26 +56,27 @@ async def get_avatar(
     if not specialist:
         raise HTTPException(404, "Specialist not found")
 
-    row = await FileService.get_avatar(session, specialist.id)
+    row = await FileService.get_accreditation(session, specialist.id)
 
     if not row:
-        raise HTTPException(status_code=404, detail="Avatar not found")
+        raise HTTPException(status_code=404, detail="Accreditation not found")
 
-    image_data, content_type = row
+    pdf_data, content_type = row
 
     return Response(
-        content=image_data,
-        media_type=content_type or "image/jpeg"
+        content=pdf_data,
+        media_type=content_type or "application/pdf"
     )
 
-@router.delete("/delete/avatar", response_model=dict[str, str])
+
+@router.delete("/delete/accreditation", response_model=dict[str, str])
 async def delete_avatar(
-    session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(require_specialist)
+        session: AsyncSession = Depends(get_session),
+        current_user: User = Depends(require_specialist)
 ):
     specialist = await SpecialistService.get_by_user_id(session, current_user.id)
     if not specialist:
         raise HTTPException(404, "Specialist not found")
 
-    await FileService.delete_avatar(session, specialist.id)
-    return {"message": "Image deleted successfully."}
+    await FileService.delete_accreditation(session, specialist.id)
+    return {"message": "Accreditation deleted successfully."}
