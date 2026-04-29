@@ -540,11 +540,6 @@ export default function App() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
 
-  const [messages, setMessages] = useState([
-    { sender: 'specialist', text: 'Hello! How can I help you?' },
-  ]);
-  const [newMessage, setNewMessage] = useState('');
-
   const [orderChats, setOrderChats] = useState<OrderChats>({});
   const [chatMessage, setChatMessage] = useState('');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -622,30 +617,6 @@ export default function App() {
     setLoginError(false);
     setLoginErrorMsg('');
 
-    if (loginEmail === 'Admin' && loginPassword === 'admin') {
-      setUser({ name: 'Admin', email: 'Admin', phone: '', country: '', city: '', role: 'admin' });
-      setRole('admin');
-      setPage('dashboard');
-      return;
-    }
-
-    if (loginEmail === 'cl' && loginPassword === 'cl' && role === 'client') {
-      const testClient = {
-        name: 'Test Client',
-        email: 'client@test.com',
-        phone: '+7 777 000 0000',
-        country: 'Kazakhstan',
-        city: 'Aktobe',
-        role: 'client' as Role,
-      };
-
-      setUser(testClient);
-      setRole('client');
-      localStorage.setItem('currentUser', JSON.stringify(testClient));
-      setPage('home');
-      return;
-    }
-
     if (!loginEmail || !loginPassword) {
       setLoginErrorMsg('Please fill in all fields');
       setLoginError(true);
@@ -690,14 +661,7 @@ export default function App() {
     }
   };
 
-  const sendMessage = () => {
-    if (!newMessage.trim()) return;
-    setMessages((prev: any) => [...prev, { sender: 'user', text: newMessage }]);
-    setNewMessage('');
-    setTimeout(() => {
-      setMessages((prev: any) => [...prev, { sender: 'specialist', text: 'Got it, I will check 👌' }]);
-    }, 1000);
-  };
+
 
   const sendOrderMessage = () => {
   if (!selectedBookingId || !chatMessage.trim()) return;
@@ -834,7 +798,7 @@ const specialistBookings = bookings.filter((b) => b.specialist === user.name);
 
   const handleBookingConfirm = () => {
     const newBooking: Booking = {
-      id: `SKL-${1000 + bookings.length + 1}`,
+      id: `SKL-${Date.now()}`,
       client: user.name,
       specialist: selectedOffer ? selectedOffer.specialistName : selectedSpecialist.name,
       service: selectedOffer ? selectedOffer.title : selectedSpecialist.title,
