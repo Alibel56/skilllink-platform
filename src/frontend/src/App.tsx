@@ -977,27 +977,19 @@ const updateBookingStatus = (bookingId: string) => {
             </div>
 
             <div className="hero-right">
-              {categories.slice(0, 3).map((cat, index) => {
+              {categories.map((cat) => {
                 const Icon = cat.icon;
-
                 return (
                   <motion.div
                     key={cat.id}
-                    className={`floating-card floating-${index}`}
-                    animate={{ y: [0, -10, 0] }}
-                    transition={{
-                      duration: 4 + index,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
+                    className="floating-card"
+                    whileHover={{ y: -4 }}
+                    transition={{ duration: 0.2 }}
                   >
-                    <IconBadge>
-                      <Icon size={24} />
-                    </IconBadge>
-
+                    <IconBadge><Icon size={22} /></IconBadge>
                     <div>
                       <h3>{cat.label}</h3>
-                      <p>Top rated experts</p>
+                      <p>{cat.description}</p>
                     </div>
                   </motion.div>
                 );
