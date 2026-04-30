@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.backend.app.db.models.catalog import Catalog
 from src.backend.app.schemas.CatalogSchema import CatalogCreate, CatalogUpdate, CatalogFilter
 from src.backend.app.dao.CatalogDao import CatalogDao
-from src.backend.app.validation.CreateValidation import CreateValidation
+from src.backend.app.validation.CatalogValidator import CatalogValidator
 
 class CatalogService:
 
@@ -17,7 +17,7 @@ class CatalogService:
         specialist_id: uuid.UUID,
         data: CatalogCreate
     ) -> Catalog:
-        await CreateValidation.is_valid_catalog(session, specialist_id, data)
+        await CatalogValidator.ensure_can_create(session, specialist_id, data)
 
         item = Catalog(specialist_id=specialist_id, **data.model_dump())
         result = await CatalogDao.create(session, item)

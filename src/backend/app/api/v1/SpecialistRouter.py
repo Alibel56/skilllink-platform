@@ -9,11 +9,7 @@ from src.backend.app.core.dependencies import (
     require_specialist,
     require_client, get_current_user
 )
-import base64
-from fastapi import UploadFile, File
-from src.backend.app.tasks.image_tasks import compress_and_store_image
-from src.backend.app.core.config import settings
-from src.backend.app.db.models.enums import ServiceType,LogType
+
 from src.backend.app.db.models.user import User
 from src.backend.app.db.session import get_session
 from src.backend.app.schemas.SpecialistSchema import SpecialistCreate, SpecialistUpdate, SpecialistDto
@@ -106,19 +102,16 @@ async def deactivate_specialist(
 # =========================
 # DELETE SPECIALIST
 # =========================
-@router.delete("/delete/{specialist_id}", response_model=dict[str, str])
+@router.delete("/delete", response_model=dict[str, str])
 async def delete_specialist(
-    specialist_id: uuid.UUID,
     request: Request,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(require_specialist)
 ):
-    specialist = await SpecialistService.get_by_id(session, specialist_id)
+    specialist = await SpecialistService.get_by_user_id(session, current_user.id)
 
     if not specialist:
         raise HTTPException(status_code=404, detail="Specialist not found")
-    if specialist.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not allowed to delete")
 
     await SpecialistService.delete(session, specialist)
 

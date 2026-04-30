@@ -2,12 +2,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Depends
 from fastapi.responses import JSONResponse
-from sqlmodel import SQLModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 # Все модели должны быть импортированы ДО вызова create_all
-import src.backend.app.db.models
 from src.backend.app.api.v1.AuthRouter import router as auth_router
 from src.backend.app.api.v1.CatalogRouter import router as catalog_router
 from src.backend.app.api.v1.OrderRouter import router as order_router
@@ -25,8 +23,7 @@ from src.backend.app.core.Redis import redis_client
 from src.backend.app.core.dependencies import require_admin
 from src.backend.app.db.models import User
 from src.backend.app.db.session import engine
-from src.backend.app.exceptions.NotFoundException import NotFoundException
-from src.backend.app.exceptions.ValidationException import ValidationException
+from src.backend.app.exceptions.Handlers import register_exception_handlers
 from src.backend.app.middleware.middleware import LoggingMiddleware
 from src.backend.app.middleware.rate_limit_middleware import RateLimitMiddleware
 from src.backend.app.middleware.profiling_middleware import ProfilingMiddleware, get_latency_report
@@ -58,6 +55,12 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# ─────────────────────────────────────────────────────────
+# Exception handlers
+# ─────────────────────────────────────────────────────────
+register_exception_handlers(app)
+
 
 # -------------------------
 # MIDDLEWARE
@@ -92,39 +95,22 @@ app.add_middleware(
 )
 
 # -------------------------
-# EXCEPTION HANDLERS
-# -------------------------
-@app.exception_handler(NotFoundException)
-async def not_found_handler(request: Request, exc: NotFoundException):
-    return JSONResponse(
-        status_code=404,
-        content={"detail": exc.detail}
-    )
-
-
-@app.exception_handler(ValidationException)
-async def validation_handler(request: Request, exc: ValidationException):
-    return JSONResponse(
-        status_code=422,
-        content={"detail": exc.errors}
-    )
-
-
-# -------------------------
 # ROUTERS
 # -------------------------
-app.include_router(auth_router,           prefix="/api/v1")
-app.include_router(user_router,           prefix="/api/v1")
-app.include_router(specialist_router,     prefix="/api/v1")
-app.include_router(order_router,          prefix="/api/v1")
-app.include_router(catalog_router,        prefix="/api/v1")
-app.include_router(request_router,        prefix="/api/v1")
-app.include_router(file_router,          prefix="/api/v1")
-app.include_router(accreditation_router, prefix="/api/v1")
-app.include_router(address_router,       prefix="/api/v1")
-app.include_router(comment_router,       prefix="/api/v1")
-app.include_router(message_router,       prefix="/api/v1")
-app.include_router(rate_router,          prefix="/api/v1")
+_V1 = "/api/v1"
+
+app.include_router(auth_router,           prefix=_V1)
+app.include_router(user_router,           prefix=_V1)
+app.include_router(specialist_router,     prefix=_V1)
+app.include_router(order_router,          prefix=_V1)
+app.include_router(catalog_router,        prefix=_V1)
+app.include_router(request_router,        prefix=_V1)
+app.include_router(file_router,          prefix=_V1)
+app.include_router(accreditation_router, prefix=_V1)
+app.include_router(address_router,       prefix=_V1)
+app.include_router(comment_router,       prefix=_V1)
+app.include_router(message_router,       prefix=_V1)
+app.include_router(rate_router,          prefix=_V1)
 
 
 

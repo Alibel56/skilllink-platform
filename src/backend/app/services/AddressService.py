@@ -7,7 +7,7 @@ from src.backend.app.db.models.address import Address
 from src.backend.app.schemas.AddressSchema import AddressCreate
 from src.backend.app.services.h3Service import H3Service
 from src.backend.app.dao.AddressDao import AddressDao
-from src.backend.app.validation.CreateValidation import CreateValidation
+from src.backend.app.validation.AddressValidator import AddressValidator
 
 class AddressService:
 
@@ -17,7 +17,7 @@ class AddressService:
         user_id: uuid.UUID,
         data: AddressCreate,
     ) -> Address:
-        await CreateValidation.is_valid_address(session, user_id)
+        await AddressValidator.ensure_can_create(session, user_id)
 
         h3_index = H3Service.geo_to_h3(data.lat, data.lon)
 

@@ -5,8 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.backend.app.dao.OrderDao import OrderDao
 from src.backend.app.dao.SpecialistDao import SpecialistDao
 from src.backend.app.db.models.message import Message
-from src.backend.app.exceptions.NotFoundException import NotFoundException
-from src.backend.app.exceptions.ValidationException import ValidationException
+from src.backend.app.exceptions.Base import NotFoundException, ValidationException
 from src.backend.app.schemas.MessageSchema import MessageCreate
 from src.backend.app.dao.MessageDao import MessageDao
 

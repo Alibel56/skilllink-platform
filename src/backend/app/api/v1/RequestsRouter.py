@@ -23,18 +23,13 @@ router = APIRouter(
 # GET ALL REQUESTS
 # =========================
 
-@router.get("/get/all/{user_id}", response_model=list[OrderRequest])
+@router.get("/get/all", response_model=list[OrderRequest])
 async def get_all_requests(
-        user_id: uuid.UUID,
         request: Request,
         session: AsyncSession = Depends(get_session),
         current_user: User = Depends(require_client)
 ):
-    if current_user.id != user_id:
-        raise HTTPException(403, "Not allowed to view requests")
-
-    result = await OrderRequestsService.get_all_requests(session, user_id)
-
+    result = await OrderRequestsService.get_all_requests(session, current_user.id)
     return result
 
 # =========================

@@ -20,7 +20,7 @@ router = APIRouter(
 # CREATE MESSAGE
 # ─────────────────────────────────────────
 
-@router.post("/create", response_model=MessageDto)
+@router.post("/write", response_model=MessageDto)
 async def create_message(
         data: MessageCreate,
         order_id: uuid.UUID,

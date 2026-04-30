@@ -8,8 +8,7 @@ from src.backend.app.db.models.specialist import Specialist
 from src.backend.app.schemas.SpecialistSchema import SpecialistCreate, SpecialistUpdate
 from src.backend.app.services.H3zonestatsservice import H3ZoneStatsService
 from src.backend.app.services.h3Service import H3Service
-from src.backend.app.validation.CreateValidation import CreateValidation
-
+from src.backend.app.validation.SpecialistValidator import SpecialistValidator
 
 class SpecialistService:
 
@@ -17,16 +16,13 @@ class SpecialistService:
     async def create(
             session: AsyncSession,
             user_id: uuid.UUID,
-            data: SpecialistCreate
+            data: SpecialistCreate,
     ) -> Specialist:
-        await CreateValidation.is_valid_specialist(session, user_id)
+        # Было: CreateValidation.is_valid_specialist(session, user_id)
+        await SpecialistValidator.ensure_can_create(session, user_id)
 
         h3_index = H3Service.geo_to_h3(data.lat, data.lon)
-
-        specialist = Specialist(
-            user_id=user_id,
-            h3_index=h3_index
-        )
+        specialist = Specialist(user_id=user_id, h3_index=h3_index)
 
         result = await SpecialistDao.create(session, specialist)
         await H3ZoneStatsService.on_specialist_created(session, specialist)

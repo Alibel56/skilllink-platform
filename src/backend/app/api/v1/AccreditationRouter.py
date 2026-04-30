@@ -70,7 +70,7 @@ async def get_accreditation(
 
 
 @router.delete("/delete/accreditation", response_model=dict[str, str])
-async def delete_avatar(
+async def delete_accreditation(
         session: AsyncSession = Depends(get_session),
         current_user: User = Depends(require_specialist)
 ):

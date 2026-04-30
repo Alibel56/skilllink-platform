@@ -24,7 +24,7 @@ router = APIRouter(
 # CREATE COMMENT
 # ─────────────────────────────────────────
 
-@router.post("/create", response_model=CommentDto)
+@router.post("/write", response_model=CommentDto)
 async def comment_specialist(
         data: CommentCreate,
         request: Request,

@@ -12,6 +12,7 @@ from src.backend.app.core.dependencies import (
 from src.backend.app.db.models.enums import ServiceType, OrderStatus, LogType
 from src.backend.app.db.models.user import User
 from src.backend.app.db.session import get_session
+from src.backend.app.exceptions.Base import NotFoundException, ForbiddenException
 from src.backend.app.schemas.OrderRequestsSchema import OrderRequestCreate
 from src.backend.app.schemas.OrderSchema import OrderCreate, OrderUpdate, OrderDto
 from src.backend.app.services.OrderService import OrderService
@@ -23,234 +24,141 @@ router = APIRouter(
     tags=["Orders"]
 )
 
-# ─────────────────────────────────────────
-# CREATE ORDER
-# ─────────────────────────────────────────
-
 @router.post("/create", response_model=OrderDto)
 async def create_order(
     data: OrderCreate,
-    request: Request,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(require_any)
+    current_user: User = Depends(require_any),
 ):
+    return await OrderService.create(session, current_user.id, data)
 
-    order = await OrderService.create(
-        session,
-        current_user.id,
-        data
-    )
-
-    return order
-
-
-# ─────────────────────────────────────────
-# GET ORDER BY ID
-# ─────────────────────────────────────────
 
 @router.get("/get/{order_id}", response_model=OrderDto)
 async def get_order(
     order_id: uuid.UUID,
-    request: Request,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(require_any)
+    current_user: User = Depends(require_any),
 ):
-
     order = await OrderService.get_by_id(session, order_id)
-
     if not order:
-        raise HTTPException(404, "Order not found")
+        raise NotFoundException("Order not found")
     return order
 
 
-# ─────────────────────────────────────────
-# USER ORDERS
-# ─────────────────────────────────────────
-
 @router.get("/my", response_model=list[OrderDto])
 async def get_my_orders(
-    request: Request,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(require_client)
+    current_user: User = Depends(require_client),
 ):
+    return await OrderService.get_user_orders(session, current_user.id)
 
-    orders =  await OrderService.get_user_orders(session, current_user.id)
-
-    return orders
-
-# ─────────────────────────────────────────
-# ACTIVE ORDERS
-# ─────────────────────────────────────────
 
 @router.get("/active", response_model=list[OrderDto])
 async def get_active_orders(
-    request: Request,
     session: AsyncSession = Depends(get_session),
     limit: Optional[int] = None,
     offset: Optional[int] = None,
-    current_user: User = Depends(require_specialist)
+    current_user: User = Depends(require_specialist),
 ):
-    orders =  await OrderService.get_active_orders(session, limit, offset)
+    return await OrderService.get_active_orders(session, limit, offset)
 
-    return orders
-
-
-# ─────────────────────────────────────────
-# SPECIALIST ORDERS
-# ─────────────────────────────────────────
 
 @router.get("/specialist/my", response_model=list[OrderDto])
 async def get_specialist_orders(
-    request: Request,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(require_any)
+    current_user: User = Depends(require_any),
 ):
-
     specialist = await SpecialistService.get_by_user_id(session, current_user.id)
-
     if not specialist:
-        raise HTTPException(404, "Specialist profile not found")
-
+        raise NotFoundException("Specialist profile not found")
     return await OrderService.get_specialist_orders(session, specialist.id)
 
-
-# ─────────────────────────────────────────
-# UPDATE ORDER
-# ─────────────────────────────────────────
 
 @router.put("/update/{order_id}", response_model=OrderDto)
 async def update_order(
     order_id: uuid.UUID,
     data: OrderUpdate,
-    request: Request,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(require_client)
+    current_user: User = Depends(require_client),
 ):
-
     order = await OrderService.get_by_id(session, order_id)
-
     if not order:
-        raise HTTPException(404, "Order not found")
-
+        raise NotFoundException("Order not found")
     if order.user_id != current_user.id:
-        raise HTTPException(403, "Not allowed to update order")
+        raise ForbiddenException("Not allowed to update this order")
+    return await OrderService.update(session, order, data)
 
-    result = await OrderService.update(session, order, data)
-
-    return result
-
-
-# ─────────────────────────────────────────
-# TAKE ORDER (specialist)
-# ─────────────────────────────────────────
 
 @router.post("/take/{order_id}", response_model=dict[str, str])
 async def take_order(
     order_id: uuid.UUID,
-    request: Request,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(require_specialist)
+    current_user: User = Depends(require_specialist),
 ):
-
     specialist = await SpecialistService.get_by_user_id(session, current_user.id)
-
     if not specialist:
-        raise HTTPException(404, "Specialist profile not found")
+        raise NotFoundException("Specialist profile not found")
 
     order = await OrderService.get_by_id(session, order_id)
     if not order:
-        raise HTTPException(404, "Order not found")
+        raise NotFoundException("Order not found")
     if order.status != OrderStatus.open:
-        raise HTTPException(400, "Order is not available")
+        raise ForbiddenException("Order is not available")
     if order.user_id == current_user.id:
-        raise HTTPException(400, "Cannot take your own order")
+        raise ForbiddenException("Cannot take your own order")
 
     data = OrderRequestCreate(
         user_id=order.user_id,
         specialist_id=specialist.id,
-        order_id = order.id
+        order_id=order.id,
     )
+    await OrderRequestsService.try_to_take_order(session, data)
+    return {"message": "Thank you for your interest. Please wait for approval."}
 
-    await OrderRequestsService.try_to_take_order(session,data)
-
-    return {"message": "Thank You for the interest. Please Wait the approval"}
-
-
-# ─────────────────────────────────────────
-# COMPLETE ORDER
-# ─────────────────────────────────────────
 
 @router.post("/complete/{order_id}", response_model=dict[str, str])
 async def complete_order(
     order_id: uuid.UUID,
-    request: Request,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(require_client)
+    current_user: User = Depends(require_client),
 ):
-
     order = await OrderService.get_by_id(session, order_id)
-
     if not order:
-        raise HTTPException(404, "Order not found")
+        raise NotFoundException("Order not found")
     if order.user_id != current_user.id:
-        raise HTTPException(403, "Not allowed to complete order")
+        raise ForbiddenException("Not allowed to complete this order")
 
-    result = await OrderService.complete_order(
-        session,
-        order,
-        current_user.id
-    )
+    result = await OrderService.complete_order(session, order, current_user.id)
+    return {"message": f"Order completed at {result.completed_at}"}
 
-    return {"message": f"Order completed at{result.completed_at}"}
-
-
-# ─────────────────────────────────────────
-# CANCEL ORDER
-# ─────────────────────────────────────────
 
 @router.post("/cancel/{order_id}", response_model=dict[str, str])
 async def cancel_order(
     order_id: uuid.UUID,
-    request: Request,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(require_client)
+    current_user: User = Depends(require_client),
 ):
-
     order = await OrderService.get_by_id(session, order_id)
-
     if not order:
-        raise HTTPException(404, "Order not found")
-
+        raise NotFoundException("Order not found")
     if order.user_id != current_user.id:
-        raise HTTPException(403, "Not allowed to cancel order")
+        raise ForbiddenException("Not allowed to cancel this order")
 
-    result = await OrderService.cancel_order(
-        session,
-        order,
-        current_user.id
-    )
-    return {"message": "Order cancelled successfully}"}
+    await OrderService.cancel_order(session, order, current_user.id)
+    return {"message": "Order cancelled successfully"}
 
-
-# ─────────────────────────────────────────
-# DELETE ORDER
-# ─────────────────────────────────────────
 
 @router.delete("/delete/{order_id}", response_model=dict[str, str])
 async def delete_order(
     order_id: uuid.UUID,
-    request: Request,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(require_client)
+    current_user: User = Depends(require_client),
 ):
-
     order = await OrderService.get_by_id(session, order_id)
-
     if not order:
-        raise HTTPException(404, "Order not found")
+        raise NotFoundException("Order not found")
     if order.user_id != current_user.id:
-        raise HTTPException(403, "Not allowed to delete order")
+        raise ForbiddenException("Not allowed to delete this order")
 
     await OrderService.delete(session, order)
-
     return {"message": "Order deleted"}

@@ -31,28 +31,24 @@ async def get_me(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    return current_user
+    user = await UserService.get_by_id(session, current_user.id)
+    return user
 
 
 # =========================
 # UPDATE USER
 # =========================
-@router.put("/update/{user_id}", response_model=UserDto)
+@router.put("/update", response_model=UserDto)
 async def update_user(
-    user_id: uuid.UUID,
     data: UserUpdate,
     request: Request,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(require_any)
 ):
-    user = await UserService.get_by_id(session, user_id)
+    user = await UserService.get_by_id(session, current_user.id)
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
-    # пользователь может менять только себя
-    if current_user.id != user.id:
-        raise HTTPException(status_code=403, detail="Not allowed to update")
 
     updated_user = await UserService.update(session, user, data)
 
@@ -62,20 +58,16 @@ async def update_user(
 # =========================
 # DELETE USER
 # =========================
-@router.delete("/delete/{user_id}", response_model=dict[str, str])
+@router.delete("/delete", response_model=dict[str, str])
 async def delete_user(
-    user_id: uuid.UUID,
     request: Request,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(require_any)
 ):
-    user = await UserService.get_by_id(session, user_id)
+    user = await UserService.get_by_id(session, current_user.id)
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
-    if current_user.id != user.id:
-        raise HTTPException(status_code=403, detail="Not allowed to delete")
 
     await UserService.delete(session, user)
 

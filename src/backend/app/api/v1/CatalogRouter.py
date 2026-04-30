@@ -21,7 +21,7 @@ router = APIRouter(
 # CREATE CATALOG ITEM
 # ─────────────────────────────────────────
 
-@router.post("/create", response_model=CatalogDto)
+@router.post("/add/item", response_model=CatalogDto)
 async def create_catalog_item(
     data: CatalogCreate,
     request: Request,

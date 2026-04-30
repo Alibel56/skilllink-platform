@@ -20,7 +20,7 @@ router = APIRouter(
 # CREATE ADDRESS
 # ─────────────────────────────────────────
 
-@router.post("/create", response_model=AddressDto)
+@router.post("/add/address", response_model=AddressDto)
 async def create_address(
         data: AddressCreate,
         request: Request,
@@ -40,19 +40,15 @@ async def create_address(
 # GET USER ADDRESS
 # ─────────────────────────────────────────
 
-@router.get("/get/address/{user_id}", response_model=AddressDto)
+@router.get("/get/address", response_model=AddressDto)
 async def get_address(
-        user_id: uuid.UUID,
         request: Request,
         session: AsyncSession = Depends(get_session),
         current_user: User = Depends(require_client)
 ):
-    if user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not allowed to view this address")
-
     item = await AddressService.get_by_user_id(
         session,
-        user_id
+        current_user.id
     )
     if not item:
         raise HTTPException(status_code=404, detail="Address not found")
@@ -64,15 +60,11 @@ async def get_address(
 # DELETE USER ADDRESS
 # ─────────────────────────────────────────
 
-@router.delete("/delete/{user_id}", response_model=dict[str, str])
-async def delete_catalog_item(
-        user_id: uuid.UUID,
+@router.delete("/delete/address", response_model=dict[str, str])
+async def delete_address(
         request: Request,
         session: AsyncSession = Depends(get_session),
         current_user: User = Depends(require_client)
 ):
-    if user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not allowed to delete")
-
     await AddressService.delete(session, current_user.id)
     return {"message": "Address deleted successfully"}
