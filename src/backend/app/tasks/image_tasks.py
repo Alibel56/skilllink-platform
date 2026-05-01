@@ -26,7 +26,7 @@ def _compress(raw_bytes: bytes) -> bytes:
 
 
 @celery_app.task(name="tasks.compress_and_store_image", bind=True, max_retries=3, default_retry_delay=15)
-def compress_and_store_image(self, specialist_id: str, image_b64: str, db_url: str):
+def compress_and_store_image(self, user_id: str, image_b64: str, db_url: str):
     import psycopg2
 
     try:
@@ -37,7 +37,7 @@ def compress_and_store_image(self, specialist_id: str, image_b64: str, db_url: s
         compressed_kb = len(compressed) / 1024
 
         logger.info(
-            f"[IMAGE] specialist={specialist_id} | "
+            f"[IMAGE] user={user_id} | "
             f"before={original_kb:.1f} KB | "
             f"after={compressed_kb:.1f} KB | "
             f"ratio={compressed_kb / original_kb:.1%}"
@@ -48,13 +48,13 @@ def compress_and_store_image(self, specialist_id: str, image_b64: str, db_url: s
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    INSERT INTO specialist_images
-                    (id, specialist_id, image_data, content_type,
+                    INSERT INTO user_images
+                    (id, user_id, image_data, content_type,
                      original_size_bytes, compressed_size_bytes, uploaded_at)
                     VALUES (gen_random_uuid(), %s, %s, %s, %s, %s, now())
                     """,
                     (
-                        specialist_id,
+                        user_id,
                         psycopg2.Binary(compressed),
                         "image/jpeg",
                         len(raw_bytes),
@@ -62,8 +62,8 @@ def compress_and_store_image(self, specialist_id: str, image_b64: str, db_url: s
                     ),
                 )
         conn.close()
-        logger.info(f"[IMAGE] Stored compressed image for specialist={specialist_id}")
+        logger.info(f"[IMAGE] Stored compressed image for specialist={user_id}")
 
     except Exception as exc:
-        logger.error(f"[IMAGE] Failed for specialist={specialist_id}: {exc}")
+        logger.error(f"[IMAGE] Failed for specialist={user_id}: {exc}")
         raise self.retry(exc=exc)

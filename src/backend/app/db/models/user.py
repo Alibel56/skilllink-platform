@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from src.backend.app.db.models.auditLog import AuditLog
     from src.backend.app.db.models.message import Message
     from src.backend.app.db.models.order_request import OrderRequest
+    from src.backend.app.db.models.user_image import UserImage
 
 class User(SQLModel, table=True):
     __tablename__ = "users"
@@ -44,3 +45,4 @@ class User(SQLModel, table=True):
     audit_logs: list["AuditLog"] = Relationship(back_populates="user", sa_relationship_kwargs={"lazy": "selectin"})
     messages: list["Message"] = Relationship(back_populates="sender", sa_relationship_kwargs={"lazy": "selectin"})
     order_requests: list["OrderRequest"] = Relationship(back_populates="user", sa_relationship_kwargs={"lazy": "selectin"})
+    images: list["UserImage"] = Relationship(back_populates="user", sa_relationship_kwargs={"lazy": "selectin"})

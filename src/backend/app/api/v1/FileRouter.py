@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.responses import Response
@@ -27,33 +29,26 @@ router = APIRouter(
 async def upload_avatar(
     file: UploadFile = File(...),
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(require_specialist),
+    current_user: User = Depends(require_any),
 ):
     raw = await file.read()
     FileValidator.ensure_image(file.content_type, len(raw))
 
-    specialist = await SpecialistService.get_by_user_id(session, current_user.id)
-    if not specialist:
-        raise NotFoundException("Specialist profile not found")
-
     compress_and_store_image.delay(
-        specialist_id=str(specialist.id),
+        user_id=str(current_user.id),
         image_b64=base64.b64encode(raw).decode(),
         db_url=settings.DATABASE_URL_SYNC,
     )
     return {"message": "Image queued for compression.", "original_size_bytes": len(raw)}
 
 
-@router.get("/get/avatar")
+@router.get("/get/avatar/{user_id}")
 async def get_avatar(
+    user_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(require_any),
 ):
-    specialist = await SpecialistService.get_by_user_id(session, current_user.id)
-    if not specialist:
-        raise NotFoundException("Specialist not found")
-
-    row = await FileService.get_avatar(session, specialist.id)
+    row = await FileService.get_avatar(session, user_id)
     if not row:
         raise NotFoundException("Avatar not found")
 
@@ -61,14 +56,11 @@ async def get_avatar(
     return Response(content=image_data, media_type=content_type or "image/jpeg")
 
 
-@router.delete("/delete/avatar", response_model=dict[str, str])
+@router.delete("/delete/avatar/{user_id}", response_model=dict[str, str])
 async def delete_avatar(
+    user_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(require_specialist),
+    current_user: User = Depends(require_any),
 ):
-    specialist = await SpecialistService.get_by_user_id(session, current_user.id)
-    if not specialist:
-        raise NotFoundException("Specialist not found")
-
-    await FileService.delete_avatar(session, specialist.id)
+    await FileService.delete_avatar(session, user_id)
     return {"message": "Image deleted successfully."}

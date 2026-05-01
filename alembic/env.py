@@ -33,7 +33,7 @@ from src.backend.app.db.models.order_request import OrderRequest
 from src.backend.app.db.models.orders import Order
 from src.backend.app.db.models.rate import Rate
 from src.backend.app.db.models.specialist import Specialist
-from src.backend.app.db.models.specialist_image import SpecialistImage
+from src.backend.app.db.models.user_image import UserImage
 from src.backend.app.db.models.user import User
 
 target_metadata = SQLModel.metadata

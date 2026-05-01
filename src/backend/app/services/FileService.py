@@ -8,8 +8,8 @@ from src.backend.app.dao.FileDao import FileDao
 class FileService:
 
     @staticmethod
-    async def get_avatar(session: AsyncSession, specialist_id: uuid.UUID):
-        result = await FileDao.get_avatar(session, specialist_id)
+    async def get_avatar(session: AsyncSession, user_id: uuid.UUID):
+        result = await FileDao.get_avatar(session, user_id)
         return result
 
     @staticmethod
@@ -18,8 +18,8 @@ class FileService:
         return result
 
     @staticmethod
-    async def delete_avatar(session: AsyncSession, specialist_id: uuid.UUID):
-        avatar = await FileDao.get_avatar(session, specialist_id)
+    async def delete_avatar(session: AsyncSession, user_id: uuid.UUID):
+        avatar = await FileDao.get_avatar(session, user_id)
         await FileDao.delete_avatar(session, avatar)
 
     @staticmethod

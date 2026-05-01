@@ -11,4 +11,4 @@ from .orders import Order
 from .rate import Rate
 from .specialist import Specialist
 from .user import User
-from .specialist_image import SpecialistImage
+from .user_image import UserImage

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from src.backend.app.db.models.rate import Rate
     from src.backend.app.db.models.comment import Comment
     from src.backend.app.db.models.order_request import OrderRequest
-    from src.backend.app.db.models.specialist_image import SpecialistImage
+    from src.backend.app.db.models.user_image import SpecialistImage
 
 class Specialist(SQLModel, table=True):
     __tablename__ = "specialist"
@@ -61,11 +61,6 @@ class Specialist(SQLModel, table=True):
     )
 
     order_requests: list["OrderRequest"] = Relationship(
-        back_populates="specialist",
-        sa_relationship_kwargs={"lazy": "selectin"}
-    )
-
-    images: list["SpecialistImage"] = Relationship(
         back_populates="specialist",
         sa_relationship_kwargs={"lazy": "selectin"}
     )
