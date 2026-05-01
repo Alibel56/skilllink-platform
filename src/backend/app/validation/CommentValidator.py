@@ -16,6 +16,7 @@ class CommentValidator:
         session: AsyncSession,
         user_id: uuid.UUID,
         data: CommentCreate,
+        specialist_id: uuid.UUID,
         has_completed_order: bool,
     ) -> None:
         """
@@ -27,7 +28,7 @@ class CommentValidator:
         if not has_completed_order:
             errors.append("You can only comment a specialist after a completed order")
 
-        if await CommentDao.get_user_comment(session, user_id, data.specialist_id):
+        if await CommentDao.get_user_comment(session, user_id, specialist_id):
             errors.append("You have already commented on this specialist")
 
         _raise_if_errors(errors)

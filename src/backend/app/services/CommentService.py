@@ -19,7 +19,7 @@ class CommentService:
             data: CommentCreate,
     ) -> Comment:
         has_order = await CommentDao.check_completed_order(session, user_id, specialist_id)
-        await CommentValidator.ensure_can_comment(session, user_id, data, has_order)
+        await CommentValidator.ensure_can_comment(session, user_id, data, specialist_id, has_order)
 
         comment = Comment(user_id=user_id, specialist_id=specialist_id,**data.model_dump())
         return await CommentDao.create(session, comment)
