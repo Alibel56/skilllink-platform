@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.app.core.dependencies import (
-    require_client
+    require_client, require_any
 )
 from src.backend.app.db.models.user import User
 from src.backend.app.db.session import get_session
@@ -25,7 +25,7 @@ async def create_address(
         data: AddressCreate,
         request: Request,
         session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(require_client)
+        current_user: User = Depends(require_any)
 ):
     item = await AddressService.create(
         session,
@@ -44,7 +44,7 @@ async def create_address(
 async def get_address(
         request: Request,
         session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(require_client)
+        current_user: User = Depends(require_any)
 ):
     item = await AddressService.get_by_user_id(
         session,
@@ -64,7 +64,7 @@ async def get_address(
 async def delete_address(
         request: Request,
         session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(require_client)
+        current_user: User = Depends(require_any)
 ):
     await AddressService.delete(session, current_user.id)
     return {"message": "Address deleted successfully"}

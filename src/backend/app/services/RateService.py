@@ -14,13 +14,13 @@ class RateService:
     async def create(
             session: AsyncSession,
             user_id: uuid.UUID,
+            specialist_id: uuid.UUID,
             data: RateCreate,
     ) -> Rate:
-        has_order = await RateDao.check_completed_order(session, user_id, data.specialist_id)
-        # Было: CreateValidation.is_valid_rate(...)
-        await RateValidator.ensure_can_rate(session, user_id, data, has_order)
+        has_order = await RateDao.check_completed_order(session, user_id, specialist_id)
+        await RateValidator.ensure_can_rate(session, user_id, data, specialist_id, has_order)
 
-        rate = Rate(user_id=user_id, **data.model_dump())
+        rate = Rate(user_id=user_id, specialist_id=specialist_id, **data.model_dump())
         return await RateDao.create(session, rate)
 
     @staticmethod

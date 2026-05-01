@@ -22,8 +22,9 @@ router = APIRouter(
 # CREATE CATALOG ITEM
 # ─────────────────────────────────────────
 
-@router.post("/create", response_model=RateDto)
+@router.post("/create/{specialist_id}", response_model=RateDto)
 async def rate_specialist(
+    specialist_id: uuid.UUID,
     data: RateCreate,
     request: Request,
     session: AsyncSession = Depends(get_session),
@@ -32,12 +33,13 @@ async def rate_specialist(
 
     specialist = await SpecialistService.get_by_user_id(session, current_user.id)
 
-    if specialist and specialist.id == data.specialist_id:
+    if specialist and specialist.id == specialist_id:
         raise HTTPException(400, "You can't rate your own specialist")
 
     item = await RateService.create(
         session,
         current_user.id,
+        specialist_id,
         data
     )
 

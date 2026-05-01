@@ -16,6 +16,7 @@ class RateValidator:
         session: AsyncSession,
         user_id: uuid.UUID,
         data: RateCreate,
+        specialist_id: uuid.UUID,
         has_completed_order: bool,
     ) -> None:
         """
@@ -27,7 +28,7 @@ class RateValidator:
         if not has_completed_order:
             errors.append("You can only rate a specialist after a completed order")
 
-        if await RateDao.get_user_rate(session, user_id, data.specialist_id):
+        if await RateDao.get_user_rate(session, user_id, specialist_id):
             errors.append("You have already rated this specialist")
 
         _raise_if_errors(errors)

@@ -9,6 +9,7 @@ from src.backend.app.core.dependencies import (
 )
 from src.backend.app.db.models.user import User
 from src.backend.app.db.session import get_session
+from src.backend.app.exceptions.Base import NotFoundException
 
 from src.backend.app.schemas.CommentSchema import CommentDto, CommentCreate, CommentFilter
 from src.backend.app.services.CommentService import CommentService
@@ -24,8 +25,9 @@ router = APIRouter(
 # CREATE COMMENT
 # ─────────────────────────────────────────
 
-@router.post("/write", response_model=CommentDto)
+@router.post("/write/{specialist_id}", response_model=CommentDto)
 async def comment_specialist(
+        specialist_id: uuid.UUID,
         data: CommentCreate,
         request: Request,
         session: AsyncSession = Depends(get_session),
@@ -33,12 +35,13 @@ async def comment_specialist(
 ):
     specialist = await SpecialistService.get_by_user_id(session, current_user.id)
 
-    if specialist and specialist.id == data.specialist_id:
+    if specialist and specialist.id == specialist_id:
         raise HTTPException(400, "You can't comment your own specialist")
 
     item = await CommentService.create(
         session,
         current_user.id,
+        specialist_id,
         data
     )
 
@@ -49,8 +52,9 @@ async def comment_specialist(
 # GET SPECIALIST COMMENTS
 # ─────────────────────────────────────────
 
-@router.get("/get/comments", response_model=list[CommentDto])
+@router.get("/get/comments/{specialist_id}", response_model=list[CommentDto])
 async def get_specialist_comments(
+        specialist_id: uuid.UUID,
         request: Request,
         filters: CommentFilter = Depends(),
         limit: Optional[int] = None,
@@ -58,6 +62,12 @@ async def get_specialist_comments(
         session: AsyncSession = Depends(get_session),
         current_user: User = Depends(require_client)
 ):
+    specialist = await SpecialistService.get_by_id(session, specialist_id)
+
+    if not specialist:
+        raise NotFoundException("Specialist not found")
+
+    filters.specialist_id = specialist_id
     item = await CommentService.get_all(
         session,
         filters,
@@ -81,7 +91,7 @@ async def delete_comment(
 ):
     specialist = await SpecialistService.get_by_id(session, specialist_id)
     if not specialist:
-        raise HTTPException(404, "Specialist not found")
+        raise NotFoundException("Specialist not found")
 
 
     await CommentService.delete(session, current_user.id, specialist_id)

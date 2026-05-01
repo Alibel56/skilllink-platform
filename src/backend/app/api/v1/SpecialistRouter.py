@@ -59,21 +59,17 @@ async def get_specialist(
 # =========================
 # UPDATE SPECIALIST
 # =========================
-@router.put("/update/{specialist_id}", response_model=SpecialistDto)
+@router.put("/update", response_model=SpecialistDto)
 async def update_specialist(
-    specialist_id: uuid.UUID,
     data: SpecialistUpdate,
     request: Request,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(require_specialist)
 ):
-    specialist = await SpecialistService.get_by_id(session, specialist_id)
+    specialist = await SpecialistService.get_by_user_id(session, current_user.id)
 
     if not specialist:
         raise HTTPException(status_code=404, detail="Specialist not found")
-
-    if specialist.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not allowed to update")
 
     updated_specialist = await SpecialistService.update(session, specialist, data)
 
