@@ -6,7 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 import secrets
 
-from src.backend.app.exceptions.Base import UnauthorizedException, NotFoundException
+from src.backend.app.exceptions.Base import UnauthorizedException, NotFoundException, ValidationException
 from src.backend.app.tasks.email_tasks import send_password_reset
 from src.backend.app.core.Redis import redis_client
 from src.backend.app.core.Security import decode_token, hash_password
@@ -109,10 +109,11 @@ async def forgot_password(
 
 @router.post("/reset-password")
 async def reset_password(
+        token: str,
         data: ResetPasswordRequest,
         session: AsyncSession = Depends(get_session)
 ):
-    user_id = await redis_client.get(f"reset:{data.token}")
+    user_id = await redis_client.get(f"reset:{token}")
     if not user_id:
         raise UnauthorizedException("Invalid or expired reset token")
 
@@ -122,6 +123,6 @@ async def reset_password(
 
     user.hashed_password = hash_password(data.new_password)
     await session.commit()
-    await redis_client.delete(f"reset:{data.token}")
+    await redis_client.delete(f"reset:{token}")
 
     return {"message": "Password reset successfully"}
