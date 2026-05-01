@@ -72,27 +72,3 @@ async def delete_avatar(
 
     await FileService.delete_avatar(session, specialist.id)
     return {"message": "Image deleted successfully."}
-
-
-accreditation_router = APIRouter(prefix="/files", tags=["Accreditation"])
-
-
-@accreditation_router.post("/upload/accreditation")
-async def upload_accreditation(
-    file: UploadFile = File(...),
-    session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(require_specialist),
-):
-    raw = await file.read()
-    FileValidator.ensure_pdf(file.content_type, len(raw))
-
-    specialist = await SpecialistService.get_by_user_id(session, current_user.id)
-    if not specialist:
-        raise NotFoundException("Specialist profile not found")
-
-    compress_and_store_pdf.delay(
-        specialist_id=str(specialist.id),
-        pdf_b64=base64.b64encode(raw).decode(),
-        db_url=settings.DATABASE_URL_SYNC,
-    )
-    return {"message": "PDF queued for processing.", "original_size_bytes": len(raw)}

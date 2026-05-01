@@ -3,7 +3,11 @@ import { ArrowLeft, Bell } from 'lucide-react';
 import { Button, Avatar } from './components/ui';
 import { BottomNav } from './components/layout';
 import { pageTitles, avatarOptions, initialReviews, specialistsSeed } from './data';
-import { getBookings, saveBookings, getOrderChats, saveOrderChats } from './storage';
+import {
+  getBookings, saveBookings, getOrderChats, saveOrderChats,
+  getToken, setToken, removeToken,
+  apiLogin, apiLogout, apiGetProfile, apiForgotPassword, apiSendMessage,
+} from './storage';
 
 import WelcomePage from './pages/WelcomePage';
 import LoginPage from './pages/LoginPage';
@@ -28,7 +32,7 @@ import Modals from './modals';
 import type { Page, Role, Booking, ServiceOffer, OrderChats } from './types';
 
 export default function App() {
-  const [user, setUser] = useState({ name: '', email: '', phone: '', country: '', city: '', role: 'client' as Role });
+  const [user, setUser] = useState({ name: '', surname: '', birth_date: '', email: '', phone: '', country: '', city: '', role: 'client' as Role });
   const [page, setPage] = useState<Page>('welcome');
   const [role, setRole] = useState<Role>('client');
 
@@ -141,28 +145,47 @@ export default function App() {
 
   const goHomeForRole = () => setPage(role === 'client' ? 'home' : 'dashboard');
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try { await apiLogout(); } catch { /* игнорируем ошибку при логауте */ }
+    removeToken();
     localStorage.removeItem('currentUser');
-    setUser({ name: '', email: '', phone: '', country: '', city: '', role: 'client' });
+    setUser({ name: '', surname: '', birth_date: '', email: '', phone: '', country: '', city: '', role: 'client' });
     setPassword('');
     setPage('login');
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setLoginError(false);
     setLoginErrorMsg('');
     if (!loginEmail || !loginPassword) { setLoginErrorMsg('Please fill in all fields'); setLoginError(true); return; }
     if (!loginEmail.includes('@')) { setLoginErrorMsg('Email must contain @'); setLoginError(true); return; }
     if (loginPassword.length < 6) { setLoginErrorMsg('Password must be at least 6 characters'); setLoginError(true); return; }
 
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const found = users.find((u: any) => u.email === loginEmail && u.password === loginPassword);
-    if (!found) { setLoginErrorMsg('Incorrect email or password'); setLoginError(true); return; }
+    try {
+      // POST /api/v1/auth/login → { access_token, token_type }
+      const { access_token } = await apiLogin({ email: loginEmail, password: loginPassword });
+      setToken(access_token);
 
-    setUser(found);
-    setRole(found.role);
-    localStorage.setItem('currentUser', JSON.stringify(found));
-    setPage(found.role === 'specialist' ? 'dashboard' : 'home');
+      // GET /api/v1/users/profile → UserDto { name, surname, role, ... }
+      const profile = await apiGetProfile();
+      const uiUser = {
+        name: `${profile.name} ${profile.surname}`.trim(),
+        surname: profile.surname,
+        birth_date: profile.birth_date,
+        email: profile.email,
+        phone: profile.phone,
+        role: profile.role as import('./types').Role,
+        country: '',
+        city: '',
+      };
+      setUser(uiUser);
+      setRole(uiUser.role);
+      localStorage.setItem('currentUser', JSON.stringify(uiUser));
+      setPage(uiUser.role === 'specialist' ? 'dashboard' : 'home');
+    } catch (e: any) {
+      setLoginErrorMsg(e.message || 'Incorrect email or password');
+      setLoginError(true);
+    }
   };
 
   const handleBookingConfirm = () => {
@@ -215,22 +238,43 @@ export default function App() {
     setPage('home');
   };
 
-  const sendOrderMessage = () => {
+  const sendOrderMessage = async () => {
     if (!selectedBookingId || !chatMessage.trim()) return;
     const booking = bookings.find(b => b.id === selectedBookingId);
     if (!booking) return;
     if (booking.client !== user.name && booking.specialist !== user.name) return;
-    setOrderChats(prev => ({
-      ...prev,
-      [selectedBookingId]: [...(prev[selectedBookingId] ?? []), {
-        id: `MSG-${Date.now()}`,
-        senderEmail: user.email,
-        senderName: user.name,
-        text: chatMessage.trim(),
-        createdAt: new Date().toISOString(),
-      }],
-    }));
+
+    const text = chatMessage.trim();
     setChatMessage('');
+
+    try {
+      // POST /api/v1/message/write?order_id={uuid}
+      // Body: { message: string }
+      // Response: MessageDto { id, order_id, sender_id, message, created_at }
+      const dto = await apiSendMessage(selectedBookingId, text);
+      setOrderChats(prev => ({
+        ...prev,
+        [selectedBookingId]: [...(prev[selectedBookingId] ?? []), {
+          id: dto.id,
+          senderEmail: user.email,
+          senderName: user.name,
+          text: dto.message,
+          createdAt: dto.created_at,
+        }],
+      }));
+    } catch {
+      // Fallback: сохранить локально если API недоступен
+      setOrderChats(prev => ({
+        ...prev,
+        [selectedBookingId]: [...(prev[selectedBookingId] ?? []), {
+          id: `MSG-${Date.now()}`,
+          senderEmail: user.email,
+          senderName: user.name,
+          text,
+          createdAt: new Date().toISOString(),
+        }],
+      }));
+    }
   };
 
   const selectedBooking = bookings.find(b => b.id === selectedBookingId) ?? bookings[0] ?? null;

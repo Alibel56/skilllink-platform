@@ -1,49 +1,108 @@
-# SkillLink Platform — API Endpoints
+# API Endpoints Documentation
 
-## Authentication
-- POST /api/v1/auth/register — register a new user
-- GET /api/v1/auth/confirm-email — confirm email address
-- POST /api/v1/auth/login — login and get JWT token
-- POST /api/v1/auth/logout — logout and invalidate token
-- POST /api/v1/auth/forgot-password — request password reset
-- POST /api/v1/auth/reset-password — reset password with token
+## Auth
+
+* POST /auth/register — register a new user
+* GET /auth/confirm-email — confirm user email via token
+* POST /auth/login — authenticate user and return access token
+* POST /auth/logout — logout user and invalidate token
+* POST /auth/forgot-password — request password reset email
+* POST /auth/reset-password — reset user password using token
+
+---
 
 ## Users
-- GET /api/v1/users/profile — get current user profile
-- PUT /api/v1/users/update/{user_id} — update user profile
-- DELETE /api/v1/users/delete/{user_id} — delete user profile
 
-## Files
-- POST /api/v1/files/upload/avatar — upload user avatar
-- GET /api/v1/files/get/avatar — get user avatar
+* GET /users/profile — get current user profile
+* PUT /users/update — update current user
+* DELETE /users/delete — delete current user
+
+---
 
 ## Specialists
-- POST /api/v1/specialists/create — create specialist profile
-- GET /api/v1/specialists/get/{specialist_id} — get specialist by id
-- PUT /api/v1/specialists/update/{specialist_id} — update specialist profile
-- PATCH /api/v1/specialists/deactivate/{specialist_id} — deactivate specialist
-- DELETE /api/v1/specialists/delete/{specialist_id} — delete specialist
-- PATCH /api/v1/specialists/verify/{specialist_id} — verify specialist
-- GET /api/v1/specialists/search — search specialists
 
-## Orders
-- POST /api/v1/orders/create — create order
-- GET /api/v1/orders/get/{order_id} — get order by id
-- GET /api/v1/orders/my — get my orders
-- GET /api/v1/orders/active — get active orders
-- GET /api/v1/orders/specialist/my — get specialist orders
-- PUT /api/v1/orders/update/{order_id} — update order
-- POST /api/v1/orders/take/{order_id} — try to take order(creating request)
-- POST /api/v1/orders/complete/{order_id} — complete order
-- POST /api/v1/orders/cancel/{order_id} — cancel order
-- DELETE /api/v1/orders/delete/{order_id} — delete order
+* POST /specialists/create — create specialist profile
+* GET /specialists/get/{specialist_id} — get specialist by ID
+* PUT /specialists/update/{specialist_id} — update specialist profile
+* PATCH /specialists/deactivate/{specialist_id} — deactivate specialist (admin)
+* PATCH /specialists/verify/{specialist_id} — verify specialist (admin)
+* DELETE /specialists/delete — delete current specialist
+* GET /specialists/search — find specialists by location and filters
+
+---
 
 ## Catalog
-- POST /api/v1/catalog/create — create catalog entry
-- GET /api/v1/catalog/get/catalog/{specialist_id} — get specialist catalog
-- PUT /api/v1/catalog/update/{catalog_id} — update catalog entry
-- DELETE /api/v1/catalog/delete/{catalog_id} — delete catalog entry
 
-## Requests
-- GET /api/v1/requests/get/all/{user_id} — get all requests for user
-- PUT /api/v1/requests/approve/{request_id} — approve request
+* POST /catalog/add/item — create catalog item
+* GET /catalog/get/catalog/{specialist_id} — get specialist catalog
+* PUT /catalog/update/{catalog_id} — update catalog item
+* DELETE /catalog/delete/{catalog_id} — delete catalog item
+
+---
+
+## Address
+
+* POST /address/add/address — create user address
+* GET /address/get/address — get user address
+* DELETE /address/delete/address — delete user address
+
+---
+
+## Files (Avatar)
+
+* POST /files/upload/avatar — upload specialist avatar
+* GET /files/get/avatar — get specialist avatar
+* DELETE /files/delete/avatar — delete specialist avatar
+
+---
+
+## Files (Accreditation)
+
+* POST /files/upload/accreditation — upload accreditation PDF
+* GET /files/get/accreditation — get accreditation PDF
+* DELETE /files/delete/accreditation — delete accreditation
+
+---
+
+## Orders
+
+* POST /orders/create — create new order
+* GET /orders/get/{order_id} — get order by ID
+* GET /orders/my — get current user orders
+* GET /orders/active — get active orders (for specialists)
+* GET /orders/specialist/my — get specialist orders
+* PUT /orders/update/{order_id} — update order
+* POST /orders/take/{order_id} — request to take order
+* POST /orders/complete/{order_id} — complete order
+* POST /orders/cancel/{order_id} — cancel order
+* DELETE /orders/delete/{order_id} — delete order
+
+---
+
+## Order Requests
+
+* GET /requests/get/all — get all requests for current user
+* PUT /requests/approve/{request_id} — approve order request
+
+---
+
+## Comments
+
+* POST /comment/write — create comment for specialist
+* GET /comment/get/comments — get comments list
+* DELETE /comment/delete/{specialist_id} — delete comment
+
+---
+
+## Rates
+
+* POST /rate/create — rate specialist
+* GET /rate/get/rate/{specialist_id} — get specialist average rating
+* DELETE /rate/delete/{specialist_id} — delete rating
+
+---
+
+## Messages
+
+* POST /message/write — send message in order chat
+* GET /message/get/chat/{order_id} — get messages for order chat

@@ -77,6 +77,8 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:5173",
         "https://skilllink.kz",
+        "http://localhost",
+        "http://localhost:80"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -87,10 +89,7 @@ app.add_middleware(
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=[
-        "localhost",
-        "127.0.0.1",
-        "skilllink.kz",
-        "*.skilllink.kz",
+        "*"
     ],
 )
 

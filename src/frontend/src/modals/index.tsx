@@ -1,7 +1,7 @@
 import { Eye, EyeOff } from 'lucide-react';
 import { Button, InputField } from '../components/ui';
-import { getUsers, saveUsers } from '../storage';
-import { countriesWithCities, avatarOptions } from '../data';
+import { apiUpdateProfile, apiForgotPassword } from '../storage';
+import { avatarOptions } from '../data';
 
 type ModalsProps = {
   // Avatar picker
@@ -116,8 +116,12 @@ export default function Modals({
                   onChange={e => setForgotEmail(e.target.value)} style={{ marginTop: '16px' }} />
                 <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
                   <Button variant="secondary" onClick={() => { setShowForgotPassword(false); setForgotEmail(''); }}>Cancel</Button>
-                  <Button onClick={() => {
+                  <Button onClick={async () => {
                     if (!forgotEmail.includes('@')) { alert('Please enter a valid email with @'); return; }
+                    try {
+                      // POST /api/v1/auth/forgot-password?email=...
+                      await apiForgotPassword(forgotEmail);
+                    } catch { /* backend всегда отвечает 200 */ }
                     setForgotSent(true);
                   }}>Send Reset Link</Button>
                 </div>
@@ -167,24 +171,7 @@ export default function Modals({
               style={{ marginBottom: '4px' }} />
             {editErrors.phone && <p style={{ color: 'red', fontSize: '13px', marginBottom: '8px' }}>{editErrors.phone}</p>}
 
-            <p className="field-label" style={{ marginTop: '12px' }}>Country</p>
-            <select className="select" value={editCountry}
-              onChange={e => { setEditCountry(e.target.value); setEditCity(''); }} style={{ marginBottom: '4px' }}>
-              <option value="">Select Country</option>
-              {Object.keys(countriesWithCities).map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            {editErrors.country && <p style={{ color: 'red', fontSize: '13px', marginBottom: '8px' }}>{editErrors.country}</p>}
-
-            {editCountry && (
-              <>
-                <p className="field-label" style={{ marginTop: '12px' }}>City</p>
-                <select className="select" value={editCity} onChange={e => setEditCity(e.target.value)} style={{ marginBottom: '4px' }}>
-                  <option value="">Select City</option>
-                  {(countriesWithCities[editCountry] || []).map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-                {editErrors.city && <p style={{ color: 'red', fontSize: '13px', marginBottom: '8px' }}>{editErrors.city}</p>}
-              </>
-            )}
+            {/* Country/City не поддерживаются backend UserUpdate — поля скрыты */}
 
             <div style={{ borderTop: '1px solid #eee', marginTop: '16px', paddingTop: '16px' }}>
               <p style={{ fontWeight: '600', marginBottom: '12px' }}>
@@ -213,7 +200,7 @@ export default function Modals({
 
             <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
               <Button variant="secondary" onClick={() => setIsEditingProfile(false)}>Cancel</Button>
-              <Button onClick={() => {
+              <Button onClick={async () => {
                 const errors: Record<string, string> = {};
                 const nameParts = editName.trim().split(' ').filter(Boolean);
                 if (!editName.trim()) errors.name = 'Full name is required';
@@ -223,14 +210,9 @@ export default function Modals({
                 if (!editPhone.trim()) errors.phone = 'Phone is required';
                 else if (!editPhone.startsWith('+')) errors.phone = 'Phone must start with +';
                 else if (editPhone.replace(/\D/g, '').length < 7) errors.phone = 'Phone is too short';
-                if (!editCountry) errors.country = 'Please select a country';
-                if (editCountry && !editCity) errors.city = 'Please select a city';
 
                 if (editOldPassword || editNewPassword || editConfirmPassword) {
-                  const users = getUsers();
-                  const current = users.find(u => u.email === user.email);
                   if (!editOldPassword) errors.oldPassword = 'Enter your current password';
-                  else if (current && current.password !== editOldPassword) errors.oldPassword = 'Current password is incorrect';
                   if (!editNewPassword) errors.newPassword = 'Enter new password';
                   else if (editNewPassword.length < 6) errors.newPassword = 'Min 6 characters';
                   else if (!/\d/.test(editNewPassword)) errors.newPassword = 'Must contain at least one number';
@@ -241,23 +223,33 @@ export default function Modals({
                 setEditErrors(errors);
                 if (Object.keys(errors).length > 0) return;
 
-                const users = getUsers();
-                const idx = users.findIndex(u => u.email === user.email);
-                if (idx !== -1) {
-                  users[idx].name = editName.trim();
-                  users[idx].email = editEmail.trim();
-                  users[idx].phone = editPhone.trim();
-                  users[idx].country = editCountry;
-                  users[idx].city = editCity;
-                  if (editNewPassword) users[idx].password = editNewPassword;
-                  saveUsers(users);
-                }
+                try {
+                  // PUT /api/v1/users/update
+                  // UserUpdate: { name?, surname?, birth_date?, phone?, email?, password? }
+                  const [firstName, ...rest] = editName.trim().split(' ');
+                  const surname = rest.join(' ') || firstName;
+                  const payload: import('../types').UserUpdate = {
+                    name: firstName,
+                    surname,
+                    phone: editPhone.trim(),
+                    email: editEmail.trim(),
+                    ...(editNewPassword ? { password: editNewPassword } : {}),
+                  };
+                  const updated = await apiUpdateProfile(payload);
 
-                const updated = { ...user, name: editName.trim(), email: editEmail.trim(), phone: editPhone.trim(), country: editCountry, city: editCity };
-                setUser(updated);
-                localStorage.setItem('currentUser', JSON.stringify(updated));
-                setEditSuccess('Profile updated successfully!');
-                setTimeout(() => { setIsEditingProfile(false); setEditSuccess(''); }, 1500);
+                  const uiUser = {
+                    ...user,
+                    name: `${updated.name} ${updated.surname}`.trim(),
+                    email: updated.email,
+                    phone: updated.phone,
+                  };
+                  setUser(uiUser);
+                  localStorage.setItem('currentUser', JSON.stringify(uiUser));
+                  setEditSuccess('Profile updated successfully!');
+                  setTimeout(() => { setIsEditingProfile(false); setEditSuccess(''); }, 1500);
+                } catch (e: any) {
+                  setEditErrors({ email: e.message || 'Failed to update profile' });
+                }
               }}>
                 Save Changes
               </Button>
