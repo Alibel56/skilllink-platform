@@ -19,6 +19,7 @@ import { FormField } from '@/components/ui/form-field';
 import { specialists, catalog as catalogApi, comments, rates, files } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 import { formatPrice, formatRelative, shortId } from '@/lib/utils';
+import type { CatalogDto, CommentDto, RateDto } from '@/types/api';
 
 const commentSchema = z.object({ comment: z.string().min(1, 'Write something').max(1000) });
 
@@ -36,19 +37,19 @@ export default function SpecialistProfilePage() {
     enabled: !!specialistId,
   });
 
-  const { data: items = [] } = useQuery({
+  const { data: items = [] } = useQuery<CatalogDto[]>({
     queryKey: ['catalog', specialistId],
     queryFn: () => catalogApi.get(specialistId),
     enabled: !!specialistId,
   });
 
-  const { data: commentsData = [] } = useQuery({
+  const { data: commentsData = [] } = useQuery<CommentDto[]>({
     queryKey: ['comments', specialistId],
     queryFn: () => comments.list(specialistId),
     enabled: !!specialistId,
   });
 
-  const { data: ratesData = [] } = useQuery({
+  const { data: ratesData = [] } = useQuery<RateDto[]>({
     queryKey: ['rates', specialistId],
     queryFn: () => rates.list(specialistId),
     enabled: !!specialistId,
