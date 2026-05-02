@@ -19,6 +19,10 @@ class AuthService:
         user = User(
             **data.model_dump(exclude={"password"}),
             hashed_password=hash_password(data.password),
+            # TEMP: email-подтверждение временно отключено — Railway блокирует
+            # исходящий SMTP. После подключения transactional API (Resend и т.п.)
+            # убрать is_verified=True и вернуть Celery-таску в роутере.
+            is_verified=True,
         )
         await UserDao.create(session, user)
         return user

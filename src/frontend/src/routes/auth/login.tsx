@@ -7,10 +7,6 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/form-field';
-import {
-  Dialog, DialogContent, DialogDescription, DialogFooter,
-  DialogHeader, DialogTitle, DialogTrigger,
-} from '@/components/ui/dialog';
 import { auth, readFieldErrors } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 
@@ -26,9 +22,7 @@ export default function LoginPage() {
   const { setToken } = useAuth();
   const [serverError, setServerError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotLoading, setForgotLoading] = useState(false);
-  const { register, handleSubmit, watch, setError, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, setError, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
   });
 
@@ -53,19 +47,6 @@ export default function LoginPage() {
       setServerError(e instanceof Error ? e.message : 'Login failed');
     } finally {
       setSubmitting(false);
-    }
-  }
-
-  async function handleForgot() {
-    if (!forgotEmail) return;
-    setForgotLoading(true);
-    try {
-      await auth.forgotPassword(forgotEmail);
-      toast.success('If that email exists, a reset link is on its way.');
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not send reset link');
-    } finally {
-      setForgotLoading(false);
     }
   }
 
@@ -103,40 +84,8 @@ export default function LoginPage() {
           </div>
         )}
 
-        <div className="flex items-center justify-between">
-          <Dialog>
-            <DialogTrigger asChild>
-              <button
-                type="button"
-                className="text-xs font-medium text-primary hover:underline"
-                onClick={() => setForgotEmail(watch('email') ?? '')}
-              >
-                Forgot password?
-              </button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Reset your password</DialogTitle>
-                <DialogDescription>
-                  We'll email you a link to set a new password.
-                </DialogDescription>
-              </DialogHeader>
-              <FormField label="Email">
-                <Input
-                  type="email"
-                  value={forgotEmail}
-                  onChange={(e) => setForgotEmail(e.target.value)}
-                  placeholder="you@example.com"
-                />
-              </FormField>
-              <DialogFooter>
-                <Button onClick={handleForgot} loading={forgotLoading} disabled={!forgotEmail}>
-                  Send reset link
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+        {/* TEMP: forgot-password скрыт — email отключен (Railway блокирует SMTP).
+            Восстановить после подключения transactional email API. */}
 
         <Button type="submit" size="lg" className="w-full" loading={submitting}>
           Log in

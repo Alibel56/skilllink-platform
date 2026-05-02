@@ -45,8 +45,10 @@ export default function SignupPage() {
         birth_date: values.birth_date,
         password: values.password,
       });
-      toast.success('Account created. Check your email to confirm.');
-      navigate('/email-pending', { state: { email: values.email } });
+      // TEMP: email-подтверждение отключено на бэке (Railway блокирует SMTP).
+      // После подключения transactional email API вернуть редирект на /email-pending.
+      toast.success('Account created. You can log in now.');
+      navigate('/login', { state: { email: values.email } });
     } catch (e) {
       const fields = readFieldErrors(e);
       if (fields) {

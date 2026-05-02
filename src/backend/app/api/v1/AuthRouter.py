@@ -7,7 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import secrets
 
 from src.backend.app.exceptions.Base import UnauthorizedException, NotFoundException, ValidationException
-from src.backend.app.tasks.email_tasks import send_password_reset
+# TEMP: email отключен (Railway блокирует SMTP). Раскомментировать после
+# подключения transactional API (Resend / SendGrid).
+# from src.backend.app.tasks.email_tasks import send_password_reset
 from src.backend.app.core.Redis import redis_client
 from src.backend.app.core.Security import decode_token, hash_password
 from src.backend.app.core.dependencies import bearer_scheme
@@ -19,7 +21,8 @@ from src.backend.app.schemas.UserSchema import UserCreate
 from src.backend.app.services.AuthService import AuthService
 from src.backend.app.services.UserService import UserService
 from src.backend.app.services.TokenBlocklistService import TokenBlocklistService
-from src.backend.app.tasks.email_tasks import send_email_confirmation
+# TEMP: email отключен (Railway блокирует SMTP).
+# from src.backend.app.tasks.email_tasks import send_email_confirmation
 
 router = APIRouter(
     prefix="/auth",
@@ -34,11 +37,14 @@ async def register(
 ):
     user = await AuthService.register(session, data)
 
-    confirmation_token = secrets.token_urlsafe(32)
-    await redis_client.setex(f"confirm:{confirmation_token}", 86400, str(user.id))
-    send_email_confirmation.delay(
-        user_email=user.email, user_name=user.name, token=confirmation_token
-    )
+    # TEMP: email-подтверждение отключено — пользователь создаётся уже
+    # с is_verified=True (см. AuthService.register). Когда подключим
+    # transactional email API, восстановить таску ниже и убрать is_verified=True.
+    # confirmation_token = secrets.token_urlsafe(32)
+    # await redis_client.setex(f"confirm:{confirmation_token}", 86400, str(user.id))
+    # send_email_confirmation.delay(
+    #     user_email=user.email, user_name=user.name, token=confirmation_token
+    # )
 
     return {"message": "User created successfully", "user_id": str(user.id)}
 
@@ -100,9 +106,10 @@ async def forgot_password(
     if not user:
         return {"message": "If that email exists, a reset link has been sent."}
 
-    token = secrets.token_urlsafe(32)
-    await redis_client.setex(f"reset:{token}", 1800, str(user.id))
-    send_password_reset.delay(user_email=user.email, user_name=user.name, token=token)
+    # TEMP: password-reset email отключен — Railway блокирует SMTP.
+    # token = secrets.token_urlsafe(32)
+    # await redis_client.setex(f"reset:{token}", 1800, str(user.id))
+    # send_password_reset.delay(user_email=user.email, user_name=user.name, token=token)
 
     return {"message": "If that email exists, a reset link has been sent."}
 
