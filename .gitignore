@@ -38,16 +38,16 @@ __pycache__/
 *$py.class
 *.so
 
-# Distribution / packaging
+# Distribution / packaging (Python — these match anywhere in the repo,
+# so we anchor /lib /lib64 to the repo root only to avoid clobbering
+# the frontend's src/frontend/src/lib/ folder)
 .Python
-build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
