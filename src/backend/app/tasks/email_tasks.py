@@ -15,6 +15,9 @@ SMTP_PASS = settings.SMTP_PASS
 FROM_EMAIL = settings.FROM_EMAIL
 
 
+SMTP_TIMEOUT = 20  # seconds — без таймаута smtplib висит вечно
+
+
 def _send_email(to: str, subject: str, html_body: str) -> None:
     if not SMTP_USER:
         # Dev режим — просто печатаем в консоль
@@ -27,12 +30,15 @@ def _send_email(to: str, subject: str, html_body: str) -> None:
     msg["To"] = to
     msg.attach(MIMEText(html_body, "html"))
 
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+    logger.info(f"[EMAIL] connecting to {SMTP_HOST}:{SMTP_PORT} for {to!r}")
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT) as server:
+        server.ehlo()
         server.starttls()
+        server.ehlo()
         server.login(SMTP_USER, SMTP_PASS)
         server.sendmail(FROM_EMAIL, to, msg.as_string())
 
-    logger.info(f"[EMAIL] Sent '{subject}' to {to}")
+    logger.info(f"[EMAIL] sent '{subject}' to {to}")
 
 
 @celery_app.task(name="tasks.send_email_confirmation", bind=True, max_retries=3, default_retry_delay=10)
@@ -51,6 +57,7 @@ def send_email_confirmation(self, user_email: str, user_name: str, token: str):
     try:
         _send_email(user_email, subject, html_body)
     except Exception as exc:
+        logger.exception(f"[EMAIL] failed to send to {user_email}: {exc!r}")
         raise self.retry(exc=exc)
 
 
@@ -70,4 +77,5 @@ def send_password_reset(self, user_email: str, user_name: str, token: str):
     try:
         _send_email(user_email, subject, html_body)
     except Exception as exc:
+        logger.exception(f"[EMAIL] failed to send to {user_email}: {exc!r}")
         raise self.retry(exc=exc)
