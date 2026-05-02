@@ -174,19 +174,63 @@ function mapOrderStatus(status: string) {
 
 function apiErrorText(data: any, fallback: string) {
   if (!data) return fallback;
+
   let raw = '';
-  if (typeof data.detail === 'string') raw = data.detail;
-  else if (Array.isArray(data.detail)) raw = data.detail.map((i: any) => i.msg || i).join(', ');
-  else if (typeof data.message === 'string') raw = data.message;
-  else raw = fallback;
+
+  if (typeof data.detail === 'string') {
+    raw = data.detail;
+  } else if (Array.isArray(data.detail)) {
+    raw = data.detail.map((i: any) => {
+      if (typeof i === 'string') return i;
+      if (typeof i?.msg === 'string') return i.msg;
+      return JSON.stringify(i);
+    }).join(', ');
+  } else if (Array.isArray(data)) {
+    raw = data.map((i: any) => String(i)).join(', ');
+  } else if (typeof data.message === 'string') {
+    raw = data.message;
+  } else {
+    raw = fallback;
+  }
+
   const lower = raw.toLowerCase();
-  if (lower.includes('already exists') || lower.includes('already registered') || lower.includes('unique')) return 'An account with this email already exists.';
-  if (lower.includes('not verified') || lower.includes('email not confirmed')) return 'Please confirm your email before logging in.';
-  if (lower.includes('invalid credentials') || lower.includes('incorrect password') || lower.includes('unauthorized')) return 'Incorrect email or password.';
-  if (lower.includes('not found')) return 'Not found. Please check your input.';
-  if (lower.includes('token') && lower.includes('expired')) return 'Your session has expired. Please log in again.';
-  if (lower.includes('failed to fetch') || lower.includes('network')) return 'Could not connect to the server.';
-  if (lower.includes('forbidden') || lower.includes('403')) return 'You do not have permission to perform this action.';
+
+  if (lower.includes('phone') && lower.includes('already')) {
+    return 'An account with this phone number already exists.';
+  }
+
+  if (lower.includes('email') && lower.includes('already')) {
+    return 'An account with this email already exists.';
+  }
+
+  if (lower.includes('already exists') || lower.includes('already registered') || lower.includes('unique') || lower.includes('duplicate')) {
+    return raw;
+  }
+
+  if (lower.includes('not verified') || lower.includes('email not confirmed')) {
+    return 'Please confirm your email before logging in.';
+  }
+
+  if (lower.includes('invalid credentials') || lower.includes('incorrect password') || lower.includes('unauthorized')) {
+    return 'Incorrect email or password.';
+  }
+
+  if (lower.includes('not found')) {
+    return 'Not found. Please check your input.';
+  }
+
+  if (lower.includes('token') && lower.includes('expired')) {
+    return 'Your session has expired. Please log in again.';
+  }
+
+  if (lower.includes('failed to fetch') || lower.includes('network')) {
+    return 'Could not connect to the server.';
+  }
+
+  if (lower.includes('forbidden') || lower.includes('403')) {
+    return 'You do not have permission to perform this action.';
+  }
+
   return raw || fallback;
 }
 
@@ -200,8 +244,13 @@ async function apiRequest<T>(path: string, options: RequestInit = {}, token?: st
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
   const ct = res.headers.get('content-type') || '';
   const data = ct.includes('application/json') ? await res.json().catch(() => null) : await res.text().catch(() => null);
-  if (!res.ok) throw new Error(apiErrorText(data, `Request failed (${res.status})`));
-  return data as T;
+  if (res.status === 401) {
+      localStorage.removeItem(TOKEN_KEY);
+      window.location.href = '/';
+      throw new Error('Session expired');
+    }
+    if (!res.ok) throw new Error(apiErrorText(data, `Request failed (${res.status})`));
+    return data as T;
 }
 
 function orderToBooking(order: ApiOrder, userId: string): Booking {
@@ -511,9 +560,16 @@ export default function App() {
         const cat = specialistCatalogs[s.id] ?? [];
         if (!cat.some((c) => c.job_type === searchJobType)) return false;
       }
+      if (searchText.trim()) {
+        const text = searchText.toLowerCase();
+        const cat = specialistCatalogs[s.id] ?? [];
+        const matchesCatalog = cat.some((c) => categoryLabel(c.job_type).toLowerCase().includes(text));
+        const matchesId = s.id.toLowerCase().includes(text);
+        if (!matchesCatalog && !matchesId) return false;
+      }
       return true;
     });
-  }, [specialists, specialistCatalogs, searchJobType]);
+}, [specialists, specialistCatalogs, searchJobType, searchText]);
 
   // ─── INITIALIZATION ────────────────────────────────────────────────────────
 
@@ -567,16 +623,89 @@ export default function App() {
     role: normalizeRole(api.role),
   });
 
-  const hydrateSession = async (token: string) => {
+    const hydrateSession = async (token: string) => {
     setIsApiBusy(true);
+    setApiNotice('');
+
     try {
-      const apiUser = await apiRequest<ApiUser>('/api/v1/users/profile', {}, token);
-      const fu = toFrontendUser(apiUser);
+      let apiUser = await apiRequest<ApiUser>('/api/v1/users/profile', {}, token);
+
+      const emailKey = apiUser.email.trim().toLowerCase();
+      const desiredRole = localStorage.getItem(`skilllink_desired_role:${emailKey}`);
+
+      let createdSpecialist: ApiSpecialist | null = null;
+
+      if (desiredRole === 'specialist') {
+        try {
+          const loc = await getGPS();
+
+          createdSpecialist = await apiRequest<ApiSpecialist>(
+            '/api/v1/specialists/create',
+            {
+              method: 'POST',
+              body: JSON.stringify({
+                lat: loc.lat,
+                lon: loc.lon,
+              }),
+            },
+            token,
+          );
+
+          localStorage.removeItem(`skilllink_desired_role:${emailKey}`);
+
+          try {
+            apiUser = await apiRequest<ApiUser>('/api/v1/users/profile', {}, token);
+          } catch {
+            // если профиль не обновился, продолжаем с текущим apiUser
+          }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : 'Specialist profile was not created';
+
+          if (msg.toLowerCase().includes('already')) {
+            localStorage.removeItem(`skilllink_desired_role:${emailKey}`);
+          } else {
+            setApiNotice(msg);
+          }
+        }
+      }
+
+        let fu = toFrontendUser(apiUser);
+
+        // Определяем роль по наличию specialist профиля, а не только по desiredRole
+        if (desiredRole === 'specialist' && createdSpecialist) {
+          fu = { ...fu, role: 'specialist' };
+        } else if (fu.role !== 'specialist') {
+          // Проверяем есть ли specialist профиль через search
+          try {
+            const loc = await getGPS();
+            const rows = await apiRequest<ApiSpecialist[]>(
+              `/api/v1/specialists/search?lat=${loc.lat}&lon=${loc.lon}&k=50`, {}, token
+            );
+            const mine = rows.find((s) => s.user_id === apiUser.id);
+            if (mine) fu = { ...fu, role: 'specialist' };
+          } catch { /* если не нашли — остаёмся client */ }
+        }
+
       setUser(fu);
       setRole(fu.role);
 
       if (fu.role === 'specialist') {
-        await loadMySpecialistProfile(token, fu.id);
+        if (createdSpecialist) {
+          setMySpecialist(createdSpecialist);
+          try {
+            const cat = await apiRequest<ApiCatalog[]>(
+              `/api/v1/catalog/get/catalog/${createdSpecialist.id}`,
+              {},
+              token,
+            );
+            setMyCatalog(cat);
+          } catch {
+            setMyCatalog([]);
+          }
+        } else {
+          await loadMySpecialistProfile(token, fu.id);
+        }
+
         await loadSpecialistOrders(token);
         setPage('dashboard');
       } else {
@@ -592,7 +721,6 @@ export default function App() {
       setIsApiBusy(false);
     }
   };
-
   // ─── SPECIALISTS ───────────────────────────────────────────────────────────
 
   const loadNearbySpecialists = async (token: string) => {
@@ -727,12 +855,15 @@ export default function App() {
   };
 
   const loadSpecialistCatalog = async (specialistId: string) => {
-    if (specialistCatalogs[specialistId]) return;
-    try {
-      const cat = await apiRequest<ApiCatalog[]>(`/api/v1/catalog/get/catalog/${specialistId}`, {}, authToken);
-      setSpecialistCatalogs((prev) => ({ ...prev, [specialistId]: cat }));
-    } catch { /* skip */ }
-  };
+      if (specialistCatalogs[specialistId]) return;
+      try {
+        const cat = await apiRequest<ApiCatalog[]>(`/api/v1/catalog/get/catalog/${specialistId}`, {}, authToken);
+        setSpecialistCatalogs((prev) => ({ ...prev, [specialistId]: cat }));
+      } catch {
+        // 403 если специалист смотрит чужой каталог — ставим пустой массив
+        setSpecialistCatalogs((prev) => ({ ...prev, [specialistId]: [] }));
+      }
+    };
 
   // ─── ORDERS ────────────────────────────────────────────────────────────────
 
@@ -811,12 +942,12 @@ export default function App() {
   };
 
   const takeOrder = async (orderId: string) => {
-    try {
-      await apiRequest<{ message: string }>(`/api/v1/orders/take/${orderId}`, { method: 'POST' }, authToken);
-      setBookings((prev) => prev.map((b) => b.id === orderId ? { ...b, status: 'Accepted' } : b));
-      setApiNotice('Request sent! Waiting for client approval.');
-    } catch (e) { alert(e instanceof Error ? e.message : 'Could not take order'); }
-  };
+      try {
+        await apiRequest<{ message: string }>(`/api/v1/orders/take/${orderId}`, { method: 'POST' }, authToken);
+        // Не меняем статус локально — бэк только создал request, заказ остаётся Pending
+        setApiNotice('Request sent! Waiting for client approval.');
+      } catch (e) { alert(e instanceof Error ? e.message : 'Could not take order'); }
+    };
 
   const deleteOrder = async (orderId: string) => {
     try {
@@ -837,17 +968,18 @@ export default function App() {
   };
 
   const approveRequest = async (requestId: string) => {
-    try {
-      await apiRequest<{ message: string }>(`/api/v1/requests/approve/${requestId}`, { method: 'PUT' }, authToken);
-      setRequests((prev) => prev.filter((r) => r.id !== requestId));
-      setBookings((prev) => prev.map((b) => {
+      try {
         const req = requests.find((r) => r.id === requestId);
-        if (req && b.id === req.order_id) return { ...b, status: 'In Progress' };
-        return b;
-      }));
-      setApiNotice('Specialist request approved!');
-    } catch (e) { alert(e instanceof Error ? e.message : 'Could not approve request'); }
-  };
+        await apiRequest<{ message: string }>(`/api/v1/requests/approve/${requestId}`, { method: 'PUT' }, authToken);
+        setRequests((prev) => prev.filter((r) => r.id !== requestId));
+        if (req) {
+          setBookings((prev) => prev.map((b) =>
+            b.id === req.order_id ? { ...b, status: 'In Progress' } : b
+          ));
+        }
+        setApiNotice('Specialist request approved!');
+      } catch (e) { alert(e instanceof Error ? e.message : 'Could not approve request'); }
+    };
 
   // ─── CHAT ──────────────────────────────────────────────────────────────────
 
@@ -871,9 +1003,9 @@ export default function App() {
     const text = chatInput.trim();
     setChatInput('');
     try {
-      const created = await apiRequest<ApiMessage>('/api/v1/message/write', {
+      const created = await apiRequest<ApiMessage>(`/api/v1/message/write?order_id=${encodeURIComponent(selectedBookingId)}`, {
         method: 'POST',
-        body: JSON.stringify({ message: text, order_id: selectedBookingId }),
+        body: JSON.stringify({ message: text }),
       }, authToken);
       setChatMessages((prev) => [...prev, {
         id: created.id, senderId: created.sender_id,
@@ -902,10 +1034,10 @@ export default function App() {
     try {
       await Promise.all([
         apiRequest(`/api/v1/comment/write/${reviewSpecialistId}`, {
-          method: 'POST', body: JSON.stringify({ comment: reviewComment, specialist_id: reviewSpecialistId }),
+          method: 'POST', body: JSON.stringify({ comment: reviewComment }),
         }, authToken),
         apiRequest(`/api/v1/rate/create/${reviewSpecialistId}`, {
-          method: 'POST', body: JSON.stringify({ rate: reviewRating, specialist_id: reviewSpecialistId }),
+          method: 'POST', body: JSON.stringify({ rate: reviewRating }),
         }, authToken),
       ]);
       setReviewComment('');
@@ -962,7 +1094,13 @@ export default function App() {
     if (!signupName.trim()) errors.name = 'First name is required';
     if (!signupSurname.trim()) errors.surname = 'Last name is required';
     if (!signupEmail.trim() || !signupEmail.includes('@')) errors.email = 'Valid email is required';
-    if (!signupPhone.trim() || signupPhone.replace(/\D/g, '').length < 7) errors.phone = 'Valid phone is required';
+    if (!signupPhone.trim()) {
+        errors.phone = 'Phone is required';
+      } else if (!signupPhone.trim().startsWith('+')) {
+        errors.phone = 'Phone must start with +';
+      } else if (signupPhone.replace(/\D/g, '').length < 7) {
+        errors.phone = 'Valid phone is required';
+      }
     if (!signupDob) errors.dob = 'Date of birth is required';
     if (!signupPassword || signupPassword.length < 6) errors.password = 'Min 6 characters';
     else if (!/\d/.test(signupPassword)) errors.password = 'Must contain at least one number';
@@ -971,20 +1109,26 @@ export default function App() {
     if (Object.keys(errors).length > 0) return;
 
     try {
-      await apiRequest<{ message: string; user_id: string }>('/api/v1/auth/register', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: signupName.trim(), surname: signupSurname.trim(),
-          email: signupEmail.trim(), phone: signupPhone.trim(),
-          birth_date: signupDob, password: signupPassword,
-          role: signupRole,
-        }),
-      }, null);
+      const cleanEmail = signupEmail.trim().toLowerCase();
+const cleanPhone = signupPhone.trim();
 
-      if (signupRole === 'specialist') {
-        localStorage.setItem(`skilllink_desired_role:${signupEmail.trim()}`, 'specialist');
-      }
-      setPage('emailPending');
+await apiRequest<{ message: string; user_id: string }>('/api/v1/auth/register', {
+  method: 'POST',
+  body: JSON.stringify({
+    name: signupName.trim(),
+    surname: signupSurname.trim(),
+    email: cleanEmail,
+    phone: cleanPhone,
+    birth_date: signupDob,
+    password: signupPassword,
+  }),
+}, null);
+
+if (signupRole === 'specialist') {
+  localStorage.setItem(`skilllink_desired_role:${cleanEmail}`, 'specialist');
+}
+
+setPage('emailPending');
     } catch (e) {
       setSignupErrors({ email: e instanceof Error ? e.message : 'Registration failed' });
     }
@@ -1438,11 +1582,11 @@ export default function App() {
                 </Button>
               </div>
             </div>
-            {specialists.length === 0 && !specialistsLoading && (
+            {filteredSpecialists.length === 0 && !specialistsLoading && (
               <div className="soft-box">No specialists found. Try adjusting your filters.</div>
             )}
             <div className="cards-grid two-cols">
-              {specialists.map((sp) => {
+              {filteredSpecialists.map((sp) => {
                 const cat = specialistCatalogs[sp.id] ?? [];
                 const minPrice = cat.length > 0 ? Math.min(...cat.map((c) => c.price)) : null;
                 return (
@@ -1459,7 +1603,7 @@ export default function App() {
                           <div className="tag-row">
                             {cat.slice(0, 3).map((c) => <Badge key={c.id}>{categoryLabel(c.job_type)}</Badge>)}
                           </div>
-                          <p className="muted small-text mt-12">H3 Zone: {sp.h3_index}</p>
+                          <p className="muted small-text mt-12">📍 Near you</p>
                         </div>
                       </div>
                       <div className="listing-actions">
@@ -1489,7 +1633,7 @@ export default function App() {
                     {selectedSpecialist.is_verified && <Badge tone="soft">Verified</Badge>}
                   </div>
                   <p className="profile-role">{selectedSpecialist.is_active ? '🟢 Active' : '🔴 Inactive'}</p>
-                  <p className="muted mt-12">H3 Zone: {selectedSpecialist.h3_index}</p>
+                  <p className="muted mt-12">📍 Near you</p>
                   <p className="muted small-text">Member since: {new Date(selectedSpecialist.created_at).toLocaleDateString()}</p>
                 </div>
                 <Card className="price-card">
@@ -1625,8 +1769,8 @@ export default function App() {
                     {selectedBooking.status === 'In Progress' && role === 'client' && (
                       <Button onClick={() => completeOrder(selectedBooking.id)}>✅ Mark Complete</Button>
                     )}
-                    {selectedBooking.status === 'Accepted' && role === 'client' && (
-                      <Button variant="secondary" onClick={() => setPage('requests')}>📋 View Requests</Button>
+                    {selectedBooking.status === 'Pending' && role === 'client' && (
+                      <Button variant="secondary" onClick={() => { void loadRequests(); setPage('requests'); }}>📋 View Requests</Button>
                     )}
                     <Button variant="secondary" onClick={() => setPage('contact')}>💬 Chat</Button>
                     {(selectedBooking.status === 'Cancelled' || selectedBooking.status === 'Completed') && role === 'client' && (
@@ -1682,10 +1826,10 @@ export default function App() {
                       <p className="muted small-text">Applied: {new Date(req.created_at).toLocaleDateString()}</p>
                     </div>
                     <div>
-                      {req.status !== 'approved' && (
+                      {req.status.toUpperCase() !== 'APPROVED' && (
                         <Button onClick={() => approveRequest(req.id)}>✅ Approve</Button>
                       )}
-                      {req.status === 'approved' && <Badge tone="success">Approved</Badge>}
+                      {req.status.toUpperCase() === 'APPROVED' && <Badge tone="success">Approved</Badge>}
                     </div>
                   </div>
                 ))}
