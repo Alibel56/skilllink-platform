@@ -3,7 +3,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.backend.app.core.dependencies import require_specialist, require_client
+from src.backend.app.core.dependencies import require_specialist, require_client, require_any
 from src.backend.app.db.models.user import User
 from src.backend.app.db.session import get_session
 from src.backend.app.schemas.CatalogSchema import CatalogCreate, CatalogUpdate, CatalogFilter, CatalogDto
@@ -32,7 +32,7 @@ async def get_specialist_catalog(
     request: Request,
     session: AsyncSession = Depends(get_session),
     filters: CatalogFilter = Depends(),
-    current_user: User = Depends(require_client)
+    current_user: User = Depends(require_any),
 ):
     return await CatalogService.get_by_specialist_id(session, specialist_id, filters)
 

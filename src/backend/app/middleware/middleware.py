@@ -1,3 +1,5 @@
+import asyncio
+import logging
 import time
 import uuid
 
@@ -9,7 +11,13 @@ from src.backend.app.db.models.enums import LogType, ServiceType
 from src.backend.app.services.AuditService import AuditService
 from src.backend.app.core.Security import decode_token
 
+logger = logging.getLogger(__name__)
+
 _TRUSTED_PROXIES = {"127.0.0.1", "::1"}
+
+# Health/docs paths — not worth auditing on every probe.
+_SKIP_PATHS = {"/", "/health", "/docs", "/redoc", "/openapi.json", "/favicon.ico"}
+
 
 def _classify(status_code: int) -> LogType:
     if status_code >= 500:
@@ -44,6 +52,7 @@ def _detect_service(path: str) -> ServiceType:
         return ServiceType.REQUEST
     return ServiceType.HTTP
 
+
 def _get_client_ip(request: Request) -> str:
     direct_ip = request.client.host if request.client else "unknown"
 
@@ -53,6 +62,7 @@ def _get_client_ip(request: Request) -> str:
             return forwarded.split(",")[0].strip()
 
     return direct_ip
+
 
 def _extract_user_id(request: Request) -> uuid.UUID | None:
     auth = request.headers.get("Authorization", "")
@@ -67,9 +77,55 @@ def _extract_user_id(request: Request) -> uuid.UUID | None:
     except Exception:
         return None
 
+
+async def _write_audit_async(
+    log_type: LogType,
+    service: ServiceType,
+    user_id: uuid.UUID | None,
+    detail: str,
+) -> None:
+    """
+    Best-effort background audit write. Runs after the response has been
+    sent to the client; failures here must never bubble up.
+    """
+    try:
+        async with AsyncSessionFactory() as session:
+            await AuditService.log(
+                session=session,
+                log_type=log_type,
+                service=service,
+                user_id=user_id,
+                detail=detail,
+            )
+            await session.commit()
+    except Exception:
+        logger.exception("audit write failed")
+
+
+def _schedule_audit(
+    log_type: LogType,
+    service: ServiceType,
+    user_id: uuid.UUID | None,
+    detail: str,
+) -> None:
+    """Fire-and-forget audit log. Keeps a reference so it isn't GC'd mid-flight."""
+    task = asyncio.create_task(
+        _write_audit_async(log_type, service, user_id, detail)
+    )
+    _BACKGROUND_TASKS.add(task)
+    task.add_done_callback(_BACKGROUND_TASKS.discard)
+
+
+_BACKGROUND_TASKS: set[asyncio.Task] = set()
+
+
 class LoggingMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next) -> Response:
+        # Skip ultra-noisy endpoints entirely.
+        if request.url.path in _SKIP_PATHS:
+            return await call_next(request)
+
         start = time.perf_counter()
         user_id = _extract_user_id(request)
         client_ip = _get_client_ip(request)
@@ -81,32 +137,15 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         try:
             response: Response = await call_next(request)
             status_code = response.status_code
-        except Exception as exc:
+        except Exception:
             elapsed_ms = (time.perf_counter() - start) * 1000
             detail = f"{client_ip} - {method} - {url} - 500 - {elapsed_ms:.2f}ms"
-            async with AsyncSessionFactory() as session:
-                await AuditService.log(
-                    session=session,
-                    log_type=LogType.ERROR,
-                    service=_detect_service(url),
-                    user_id=user_id,
-                    detail=detail,
-                )
-                await session.commit()
+            _schedule_audit(LogType.ERROR, _detect_service(url), user_id, detail)
             raise
 
         elapsed_ms = (time.perf_counter() - start) * 1000
         detail = f"{client_ip} - {method} - {url} - {status_code} - {elapsed_ms:.2f}ms"
-
-        async with AsyncSessionFactory() as session:
-            await AuditService.log(
-                session=session,
-                log_type=_classify(status_code),
-                service=_detect_service(url),
-                user_id=user_id,
-                detail=detail,
-            )
-            await session.commit()
-
+        _schedule_audit(
+            _classify(status_code), _detect_service(url), user_id, detail,
+        )
         return response
-
