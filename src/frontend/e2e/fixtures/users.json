@@ -1,0 +1,33 @@
+{
+  "client": {
+    "email": "e2e-client@skilllink.kz",
+    "password": "pass1234",
+    "name": "E2E",
+    "surname": "Client",
+    "phone": "+77001112233",
+    "birth_date": "1990-05-15",
+    "id": "b2c2a13a-032c-40f4-94d5-4c4050de6815",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMmMyYTEzYS0wMzJjLTQwZjQtOTRkNS00YzQwNTBkZTY4MTUiLCJleHAiOjE3Nzc3NDQ2MTMsImp0aSI6ImY2YmY4YzRhLWRkZDQtNDE1YS1hZjgzLWVkYjQ1Yzk4YmIwNyJ9.k6E-7w288YE3w4Z9dQDgQyCotbmY9-Q4f9ILxa3T2-w"
+  },
+  "specialist": {
+    "email": "e2e-pro@skilllink.kz",
+    "password": "pass1234",
+    "name": "E2E",
+    "surname": "Pro",
+    "phone": "+77002223344",
+    "birth_date": "1988-03-20",
+    "id": "85873450-6911-4d92-96d3-844defb9bf8c",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTg3MzQ1MC02OTExLTRkOTItOTZkMy04NDRkZWZiOWJmOGMiLCJleHAiOjE3Nzc3NDQ2NDQsImp0aSI6IjUyNzY4ZTVhLTkxYjktNDI1OC04NjRmLWUxM2ZlYzk3NTVkYSJ9.82PfulTkpPIt3BD_oA8EV_sokDmYyMPqkxSPsqj5eeM",
+    "specialist_id": "b6384871-9909-42d5-91d9-0a93c0b2b8e0"
+  },
+  "admin": {
+    "email": "e2e-admin@skilllink.kz",
+    "password": "pass1234",
+    "name": "E2E",
+    "surname": "Admin",
+    "phone": "+77003334455",
+    "birth_date": "1985-07-10",
+    "id": "e8768079-358c-40df-9eff-df44b543bdf0",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlODc2ODA3OS0zNThjLTQwZGYtOWVmZi1kZjQ0YjU0M2JkZjAiLCJleHAiOjE3Nzc3NDQ2NTIsImp0aSI6IjBiOWU5MTM0LTRmOTktNDU3MC04NjBhLTBhNjhkZGM2ZmJkMCJ9.ExihCoJTGPpSkPQ_oTMiEUVZoPsqrHikcARfRRq0row"
+  }
+}
