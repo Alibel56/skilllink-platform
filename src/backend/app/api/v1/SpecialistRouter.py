@@ -14,6 +14,17 @@ from src.backend.app.db.models.user import User
 from src.backend.app.db.session import get_session
 from src.backend.app.schemas.SpecialistSchema import SpecialistCreate, SpecialistUpdate, SpecialistDto
 from src.backend.app.services.SpecialistService import SpecialistService
+from src.backend.app.services.UserService import UserService
+
+
+async def _to_dto(session: AsyncSession, specialist) -> SpecialistDto:
+    """SpecialistDto + owner's name/surname pulled from the User row."""
+    dto = SpecialistDto.model_validate(specialist, from_attributes=True)
+    user = await UserService.get_by_id(session, specialist.user_id)
+    if user:
+        dto.name = user.name
+        dto.surname = user.surname
+    return dto
 
 router = APIRouter(
     prefix="/specialists",
@@ -37,7 +48,7 @@ async def create_specialist(
     # without re-login.
     current_user.role = "specialist"
     await session.commit()
-    return specialist
+    return await _to_dto(session, specialist)
 
 
 @router.get("/me", response_model=SpecialistDto)
@@ -50,7 +61,7 @@ async def get_my_specialist(
     specialist = await SpecialistService.get_by_user_id(session, current_user.id)
     if not specialist:
         raise HTTPException(status_code=404, detail="Specialist profile not found")
-    return specialist
+    return await _to_dto(session, specialist)
 
 
 @router.get("/get/{specialist_id}", response_model=SpecialistDto)
@@ -63,7 +74,7 @@ async def get_specialist(
     specialist = await SpecialistService.get_by_id(session, specialist_id)
     if not specialist:
         raise HTTPException(status_code=404, detail="Specialist not found")
-    return specialist
+    return await _to_dto(session, specialist)
 
 
 @router.put("/update", response_model=SpecialistDto)
@@ -137,4 +148,4 @@ async def find_specialists_nearby(
         job_type=job_type,
         max_price=max_price
     )
-    return specialists
+    return [await _to_dto(session, s) for s in specialists]

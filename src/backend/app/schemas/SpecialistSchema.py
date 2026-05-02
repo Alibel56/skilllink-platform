@@ -23,4 +23,7 @@ class SpecialistDto(SpecialistBase):
     is_active: bool
     is_verified: bool
     created_at: datetime
+    # Owner fields populated via the joined User row (see SpecialistService).
+    name: Optional[str] = None
+    surname: Optional[str] = None
     model_config = {"from_attributes": True}

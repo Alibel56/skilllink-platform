@@ -129,12 +129,19 @@ export default function SpecialistProfilePage() {
         <div className="flex flex-col sm:flex-row gap-6">
           <Avatar className="h-20 w-20">
             <AvatarImage src={files.avatarUrl(specialist.user_id)} alt="" />
-            <AvatarFallback className="text-2xl">{shortId(specialist.user_id, 2).toUpperCase()}</AvatarFallback>
+            <AvatarFallback className="text-2xl">
+              {(specialist.name?.[0] ?? '') + (specialist.surname?.[0] ?? '') ||
+                shortId(specialist.user_id, 2).toUpperCase()}
+            </AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-2xl font-semibold">Specialist {shortId(specialist.id)}</h1>
+                <h1 className="text-2xl font-semibold">
+                  {specialist.name || specialist.surname
+                    ? `${specialist.name ?? ''} ${specialist.surname ?? ''}`.trim()
+                    : `Specialist ${shortId(specialist.id)}`}
+                </h1>
                 {specialist.is_verified && (
                   <Badge variant="default" className="gap-1"><BadgeCheck className="h-3.5 w-3.5" />Verified</Badge>
                 )}

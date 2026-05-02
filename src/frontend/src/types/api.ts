@@ -46,6 +46,8 @@ export interface SpecialistDto {
   is_active: boolean;
   is_verified: boolean;
   created_at: ISODateTime;
+  name?: string | null;
+  surname?: string | null;
 }
 export interface SpecialistCreate { lat: number; lon: number }
 export interface SpecialistUpdate {

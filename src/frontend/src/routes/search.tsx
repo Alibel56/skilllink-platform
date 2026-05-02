@@ -146,11 +146,18 @@ export default function SearchPage() {
               <Card className="p-5 h-full transition-all group-hover:shadow-elevated group-hover:border-primary/30">
                 <div className="flex items-start gap-3">
                   <Avatar className="h-12 w-12">
-                    <AvatarFallback>{shortId(sp.user_id, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback>
+                      {(sp.name?.[0] ?? '') + (sp.surname?.[0] ?? '') ||
+                        shortId(sp.user_id, 2).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold truncate">Specialist {shortId(sp.id)}</h3>
+                      <h3 className="font-semibold truncate">
+                        {sp.name || sp.surname
+                          ? `${sp.name ?? ''} ${sp.surname ?? ''}`.trim()
+                          : `Specialist ${shortId(sp.id)}`}
+                      </h3>
                       {sp.is_verified && (
                         <BadgeCheck className="h-4 w-4 text-primary" />
                       )}
