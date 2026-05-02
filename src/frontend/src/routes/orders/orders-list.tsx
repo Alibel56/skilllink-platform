@@ -19,19 +19,25 @@ export default function OrdersListPage() {
   const { token, user } = useAuth();
   const isSpecialist = user?.role === 'specialist';
 
-  const myOrders = useQuery({
+  const myOrders = useQuery<OrderDto[]>({
     queryKey: ['orders', 'my'],
     queryFn: () => orders.my(),
     enabled: !!token,
   });
 
-  const activeOrders = useQuery({
-    queryKey: ['orders', 'active'],
-    queryFn: () => orders.active(),
-    enabled: !!token,
-  });
+  // Active = my orders that are still 'open' or 'in_progress'. We derive it
+  // from the same /orders/my response instead of /orders/active because that
+  // endpoint is specialist-only (returns open jobs to take).
+  const myList: OrderDto[] = Array.isArray(myOrders.data) ? myOrders.data : [];
+  const activeList = myList.filter(
+    (o) => o.status === 'open' || o.status === 'in_progress',
+  );
+  const activeOrders = {
+    data: activeList,
+    isLoading: myOrders.isLoading,
+  };
 
-  const specialistOrders = useQuery({
+  const specialistOrders = useQuery<OrderDto[]>({
     queryKey: ['orders', 'specialist', 'my'],
     queryFn: () => orders.specialistMy(),
     enabled: !!token && isSpecialist,

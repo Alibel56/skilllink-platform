@@ -28,9 +28,10 @@ class OrderDao:
 
     @staticmethod
     async def get_user_orders(session: AsyncSession, user_id: uuid.UUID) -> Sequence[Order]:
+        # NB: returns full history (open + in_progress + completed + cancelled).
+        # The frontend filters by status when it wants only the live ones.
         result = await session.execute(
             select(Order)
-            .where(Order.is_active == True)
             .where(Order.user_id == user_id)
             .order_by(Order.created_at.desc())
         )

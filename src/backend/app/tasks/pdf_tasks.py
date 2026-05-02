@@ -14,7 +14,9 @@ def _compress_pdf(raw_bytes: bytes) -> bytes:
 
     pdf = pikepdf.open(io.BytesIO(raw_bytes))
     out = io.BytesIO()
-    pdf.save(out, compress_streams=True, recompress_streams=True)
+    # pikepdf >= 8 dropped 'recompress_streams' — compress_streams alone
+    # already triggers stream recompression where useful.
+    pdf.save(out, compress_streams=True)
     return out.getvalue()
 
 

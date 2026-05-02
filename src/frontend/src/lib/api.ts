@@ -310,6 +310,9 @@ export const files = {
   },
   getAccreditation: () =>
     apiRequest<unknown>('/api/v1/files/get/accreditation'),
+  // Public to any logged-in user — used by clients viewing a specialist's profile.
+  accreditationUrl: (specialistId: string) =>
+    `${API_BASE}/api/v1/files/get/accreditation/${specialistId}`,
   deleteAccreditation: () =>
     apiRequest<{ message: string }>('/api/v1/files/delete/accreditation', { method: 'DELETE' }),
 };

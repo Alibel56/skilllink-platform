@@ -1,10 +1,7 @@
 import uuid
-from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text, select
-
-from src.backend.app.db.models import UserImage, Accreditation
+from sqlalchemy import text
 
 
 class FileDao:
@@ -36,11 +33,22 @@ class FileDao:
         return result.first()
 
     @staticmethod
-    async def delete_avatar(session: AsyncSession, avatar: UserImage):
-        await session.delete(avatar)
+    async def delete_avatar(session: AsyncSession, user_id: uuid.UUID) -> int:
+        """Delete every avatar row for this user. Returns rows affected."""
+        result = await session.execute(
+            text("DELETE FROM user_images WHERE user_id = :uid"),
+            {"uid": str(user_id)},
+        )
         await session.flush()
+        return result.rowcount or 0
 
     @staticmethod
-    async def delete_accreditation(session: AsyncSession, accreditation: Accreditation):
-        await session.delete(accreditation)
+    async def delete_accreditation(
+        session: AsyncSession, specialist_id: uuid.UUID
+    ) -> int:
+        result = await session.execute(
+            text("DELETE FROM accreditation WHERE specialist_id = :sid"),
+            {"sid": str(specialist_id)},
+        )
         await session.flush()
+        return result.rowcount or 0

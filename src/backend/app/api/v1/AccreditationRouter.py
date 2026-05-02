@@ -41,10 +41,11 @@ async def upload_accreditation(
     return {"message": "PDF queued for processing.", "original_size_bytes": len(raw)}
 
 @router.get("/get/accreditation")
-async def get_accreditation(
+async def get_my_accreditation(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(require_any),
 ):
+    """Specialist's own accreditation."""
     specialist = await SpecialistService.get_by_user_id(session, current_user.id)
 
     if not specialist:
@@ -60,6 +61,35 @@ async def get_accreditation(
     return Response(
         content=pdf_data,
         media_type=content_type or "application/pdf"
+    )
+
+
+@router.get("/get/accreditation/{specialist_id}")
+async def get_specialist_accreditation(
+    specialist_id: str,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(require_any),
+):
+    """Any logged-in user can view a specialist's accreditation —
+    used by clients deciding whether to book."""
+    import uuid as _uuid
+    try:
+        sid = _uuid.UUID(specialist_id)
+    except ValueError:
+        raise HTTPException(400, "Invalid specialist id")
+
+    specialist = await SpecialistService.get_by_id(session, sid)
+    if not specialist:
+        raise HTTPException(404, "Specialist not found")
+
+    row = await FileService.get_accreditation(session, specialist.id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Accreditation not found")
+
+    pdf_data, content_type = row
+    return Response(
+        content=pdf_data,
+        media_type=content_type or "application/pdf",
     )
 
 
