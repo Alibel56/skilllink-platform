@@ -7,12 +7,12 @@ import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ApiError, files, specialists } from '@/lib/api';
-import { SPECIALIST_ID_KEY } from '@/lib/auth-store';
+import { useMySpecialistId } from '@/lib/use-specialist';
 
 export default function AccreditationPage() {
   const qc = useQueryClient();
   const fileInput = useRef<HTMLInputElement>(null);
-  const specialistId = typeof window !== 'undefined' ? localStorage.getItem(SPECIALIST_ID_KEY) : null;
+  const specialistId = useMySpecialistId();
 
   const { data: doc, error, isLoading } = useQuery({
     queryKey: ['accreditation'],
@@ -41,8 +41,8 @@ export default function AccreditationPage() {
   const removeSpecialist = useMutation({
     mutationFn: () => specialists.delete(),
     onSuccess: () => {
-      localStorage.removeItem(SPECIALIST_ID_KEY);
       qc.invalidateQueries({ queryKey: ['users', 'profile'] });
+      qc.invalidateQueries({ queryKey: ['specialists', 'me'] });
       toast.success('Specialist profile deleted');
     },
     onError: (e: Error) => toast.error(e.message),

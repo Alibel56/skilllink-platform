@@ -29,12 +29,12 @@ const NAV_BY_ROLE: Record<string, NavItem[]> = {
     { to: '/search', label: 'Search', icon: Search },
     { to: '/orders', label: 'My orders', icon: Calendar },
     { to: '/orders/new', label: 'New order', icon: Briefcase },
+    { to: '/requests', label: 'Requests', icon: Inbox },
   ],
   specialist: [
     { to: '/jobs', label: 'Open jobs', icon: Briefcase },
     { to: '/jobs/mine', label: 'My jobs', icon: Calendar },
     { to: '/catalog', label: 'My catalog', icon: Layers },
-    { to: '/requests', label: 'Requests', icon: Inbox },
   ],
   admin: [
     { to: '/admin', label: 'Admin panel', icon: Shield },

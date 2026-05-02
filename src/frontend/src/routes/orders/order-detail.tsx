@@ -22,7 +22,8 @@ import {
 } from '@/components/ui/dialog';
 import { orders, messages } from '@/lib/api';
 import { categoryLabel } from '@/lib/constants';
-import { SPECIALIST_ID_KEY, useAuth } from '@/lib/auth-store';
+import { useAuth } from '@/lib/auth-store';
+import { useMySpecialistId } from '@/lib/use-specialist';
 import { formatDateTime, formatPrice, formatRelative, shortId } from '@/lib/utils';
 
 export default function OrderDetailPage() {
@@ -38,9 +39,7 @@ export default function OrderDetailPage() {
     enabled: !!orderId,
   });
 
-  const mySpecialistId = typeof window !== 'undefined'
-    ? localStorage.getItem(SPECIALIST_ID_KEY)
-    : null;
+  const mySpecialistId = useMySpecialistId();
   const isOwner = user?.id === order?.user_id;
   const isAssignedSpecialist =
     !!order?.specialist_id &&

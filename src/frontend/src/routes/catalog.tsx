@@ -16,7 +16,7 @@ import {
   DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { catalog as catalogApi } from '@/lib/api';
-import { SPECIALIST_ID_KEY } from '@/lib/auth-store';
+import { useMySpecialistId } from '@/lib/use-specialist';
 import { CATEGORIES, categoryLabel } from '@/lib/constants';
 import { formatPrice, formatRelative } from '@/lib/utils';
 import type { CatalogDto } from '@/types/api';
@@ -28,7 +28,7 @@ export default function CatalogPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [dialogError, setDialogError] = useState('');
 
-  const specialistId = typeof window !== 'undefined' ? localStorage.getItem(SPECIALIST_ID_KEY) : null;
+  const specialistId = useMySpecialistId();
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['catalog', specialistId],

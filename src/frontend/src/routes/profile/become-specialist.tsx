@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/form-field';
 import { PageHeader } from '@/components/ui/page-header';
 import { specialists } from '@/lib/api';
-import { SPECIALIST_ID_KEY } from '@/lib/auth-store';
 import { DEFAULT_LAT, DEFAULT_LON, getGPS } from '@/lib/utils';
 
 export default function BecomeSpecialistPage() {
@@ -21,9 +20,11 @@ export default function BecomeSpecialistPage() {
 
   const create = useMutation({
     mutationFn: () => specialists.create({ lat, lon }),
-    onSuccess: (s) => {
-      localStorage.setItem(SPECIALIST_ID_KEY, s.id);
+    onSuccess: () => {
+      // Backend now also flips user.role to 'specialist', so we re-fetch the
+      // profile + the new /specialists/me result.
       qc.invalidateQueries({ queryKey: ['users', 'profile'] });
+      qc.invalidateQueries({ queryKey: ['specialists', 'me'] });
       qc.invalidateQueries({ queryKey: ['catalog'] });
       toast.success('You are now a specialist!');
       navigate('/catalog');

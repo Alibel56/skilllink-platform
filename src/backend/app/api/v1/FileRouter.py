@@ -46,14 +46,19 @@ async def upload_avatar(
 async def get_avatar(
     user_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(require_any),
 ):
+    """Public — browsers load avatars via <img src> which can't send Bearer."""
     row = await FileService.get_avatar(session, user_id)
     if not row:
         raise NotFoundException("Avatar not found")
 
     image_data, content_type = row
-    return Response(content=image_data, media_type=content_type or "image/jpeg")
+    headers = {"Cache-Control": "public, max-age=300"}
+    return Response(
+        content=image_data,
+        media_type=content_type or "image/jpeg",
+        headers=headers,
+    )
 
 
 @router.delete("/delete/avatar/{user_id}", response_model=dict[str, str])

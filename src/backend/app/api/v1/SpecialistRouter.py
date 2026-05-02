@@ -31,6 +31,24 @@ async def create_specialist(
         user_id=current_user.id,
         data=data
     )
+    # Promote the user to 'specialist' so RoleChecker on /catalog/*,
+    # /accreditation/* and other specialist-only endpoints lets them through
+    # without re-login.
+    current_user.role = "specialist"
+    await session.commit()
+    return specialist
+
+
+@router.get("/me", response_model=SpecialistDto)
+async def get_my_specialist(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(require_specialist),
+):
+    """Returns the specialist row owned by the current user."""
+    specialist = await SpecialistService.get_by_user_id(session, current_user.id)
+    if not specialist:
+        raise HTTPException(status_code=404, detail="Specialist profile not found")
     return specialist
 
 

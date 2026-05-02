@@ -184,6 +184,7 @@ export const specialists = {
     apiRequest<SpecialistDto>('/api/v1/specialists/create', {
       method: 'POST', body: JSON.stringify(data),
     }),
+  me: () => apiRequest<SpecialistDto>('/api/v1/specialists/me'),
   get: (id: string) => apiRequest<SpecialistDto>(`/api/v1/specialists/get/${id}`),
   update: (data: SpecialistUpdate) =>
     apiRequest<SpecialistDto>('/api/v1/specialists/update', {

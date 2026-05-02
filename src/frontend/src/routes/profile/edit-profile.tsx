@@ -19,12 +19,19 @@ import {
 import { users } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 
+// Все поля опциональные — это PATCH-стиль апдейт. Пользователь меняет только
+// нужное; пустые значения не уходят на бэк. Типы валидации применяются
+// только когда поле заполнено.
 const schema = z.object({
-  name: z.string().min(1),
-  surname: z.string().min(1),
-  email: z.string().email(),
-  phone: z.string().min(8).startsWith('+'),
-  birth_date: z.string().min(1),
+  name: z.string().trim().min(1, 'Cannot be empty').optional().or(z.literal('')),
+  surname: z.string().trim().min(1, 'Cannot be empty').optional().or(z.literal('')),
+  email: z.string().email('Enter a valid email').optional().or(z.literal('')),
+  phone: z.string()
+    .min(8, 'Min 8 digits with country code')
+    .startsWith('+', 'Phone must start with +')
+    .optional()
+    .or(z.literal('')),
+  birth_date: z.string().optional().or(z.literal('')),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -48,7 +55,13 @@ export default function EditProfilePage() {
   });
 
   const update = useMutation({
-    mutationFn: (data: FormValues) => users.update(data),
+    mutationFn: (data: FormValues) => {
+      // Слать только заполненные поля — бэк UserUpdate всё равно опциональный.
+      const payload = Object.fromEntries(
+        Object.entries(data).filter(([, v]) => typeof v === 'string' && v.trim() !== ''),
+      );
+      return users.update(payload);
+    },
     onSuccess: (u) => {
       qc.invalidateQueries({ queryKey: ['users'] });
       reset({ name: u.name, surname: u.surname, email: u.email, phone: u.phone, birth_date: u.birth_date });
@@ -70,22 +83,25 @@ export default function EditProfilePage() {
       <PageHeader title="Edit profile" description="Update your personal info." />
 
       <Card className="p-6">
+        <p className="text-sm text-muted-foreground mb-4">
+          Leave a field blank to keep its current value.
+        </p>
         <form onSubmit={handleSubmit((v) => update.mutate(v))} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="First name" required error={errors.name?.message}>
+            <FormField label="First name" error={errors.name?.message}>
               <Input {...register('name')} />
             </FormField>
-            <FormField label="Last name" required error={errors.surname?.message}>
+            <FormField label="Last name" error={errors.surname?.message}>
               <Input {...register('surname')} />
             </FormField>
           </div>
-          <FormField label="Email" required error={errors.email?.message}>
+          <FormField label="Email" error={errors.email?.message}>
             <Input type="email" {...register('email')} />
           </FormField>
-          <FormField label="Phone" required error={errors.phone?.message}>
+          <FormField label="Phone" error={errors.phone?.message}>
             <Input type="tel" {...register('phone')} />
           </FormField>
-          <FormField label="Date of birth" required error={errors.birth_date?.message}>
+          <FormField label="Date of birth" error={errors.birth_date?.message}>
             <Input type="date" {...register('birth_date')} />
           </FormField>
 

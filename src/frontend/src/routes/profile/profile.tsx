@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/ui/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { users, files, address as addressApi } from '@/lib/api';
-import { SPECIALIST_ID_KEY } from '@/lib/auth-store';
+import { useMySpecialistId } from '@/lib/use-specialist';
 import { initials, formatDate } from '@/lib/utils';
 
 export default function ProfilePage() {
@@ -44,7 +44,7 @@ export default function ProfilePage() {
   }
 
   const isSpecialist = profile.role === 'specialist';
-  const specialistId = typeof window !== 'undefined' ? localStorage.getItem(SPECIALIST_ID_KEY) : null;
+  const specialistId = useMySpecialistId();
 
   return (
     <div className="space-y-6">
