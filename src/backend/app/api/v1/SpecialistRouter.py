@@ -129,6 +129,35 @@ async def verify_specialist(
     return await SpecialistService.verify(session, specialist)
 
 
+@router.get("/list", response_model=list[SpecialistDto])
+async def list_all_specialists(
+    request: Request,
+    limit: Optional[int] = 100,
+    offset: Optional[int] = 0,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(require_admin),
+):
+    """Admin-only: list every specialist with the owner's name + verify/active flags."""
+    items = await SpecialistService.get_all(session, limit=limit, offset=offset)
+    return [await _to_dto(session, s) for s in items]
+
+
+@router.patch("/activate/{specialist_id}", response_model=SpecialistDto)
+async def activate_specialist(
+    specialist_id: uuid.UUID,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(require_admin),
+):
+    specialist = await SpecialistService.get_by_id(session, specialist_id)
+    if not specialist:
+        raise HTTPException(status_code=404, detail="Specialist not found")
+    updated = await SpecialistService.update(
+        session, specialist, SpecialistUpdate(is_active=True)
+    )
+    return await _to_dto(session, updated)
+
+
 @router.get("/search", response_model=list[SpecialistDto])
 async def find_specialists_nearby(
     lat: float,

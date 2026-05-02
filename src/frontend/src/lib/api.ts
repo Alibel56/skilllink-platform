@@ -186,12 +186,16 @@ export const specialists = {
     }),
   me: () => apiRequest<SpecialistDto>('/api/v1/specialists/me'),
   get: (id: string) => apiRequest<SpecialistDto>(`/api/v1/specialists/get/${id}`),
+  list: (limit = 100, offset = 0) =>
+    apiRequest<SpecialistDto[]>(`/api/v1/specialists/list${qs({ limit, offset })}`),
   update: (data: SpecialistUpdate) =>
     apiRequest<SpecialistDto>('/api/v1/specialists/update', {
       method: 'PUT', body: JSON.stringify(data),
     }),
   deactivate: (id: string) =>
     apiRequest<SpecialistDto>(`/api/v1/specialists/deactivate/${id}`, { method: 'PATCH' }),
+  activate: (id: string) =>
+    apiRequest<SpecialistDto>(`/api/v1/specialists/activate/${id}`, { method: 'PATCH' }),
   delete: () =>
     apiRequest<{ message: string }>('/api/v1/specialists/delete', { method: 'DELETE' }),
   verify: (id: string) =>
