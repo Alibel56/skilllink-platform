@@ -3,7 +3,13 @@ from celery.schedules import crontab
 
 from src.backend.app.core.config import settings
 
-REDIS_URL = f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/0"
+if settings.REDIS_PASSWORD:
+    REDIS_URL = (
+        f"redis://{settings.REDIS_USER}:{settings.REDIS_PASSWORD}"
+        f"@{settings.REDIS_HOST}:{settings.REDIS_PORT}/0"
+    )
+else:
+    REDIS_URL = f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/0"
 
 celery_app = Celery(
     "skilllink",

@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     REDIS_HOST: str
     REDIS_PORT: int = 6379
+    REDIS_PASSWORD: str = ""
+    REDIS_USER: str = "default"
     PROFILING_ENABLED: bool = True
     SLOW_THRESHOLD_MS: float = 500.0
     SMTP_HOST: str = ""
