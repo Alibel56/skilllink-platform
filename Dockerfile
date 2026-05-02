@@ -23,9 +23,12 @@ FROM python:3.12-slim AS runtime
 
 WORKDIR /app
 
-# Only runtime system libs (libpq for psycopg2)
+# Only runtime system libs:
+#   libpq5  — psycopg2
+#   libqpdf29t64 / libqpdf29 — pikepdf (PDF compression for accreditation)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
+    qpdf \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy installed packages from builder
