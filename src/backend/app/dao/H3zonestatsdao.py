@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional, Sequence
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.app.db.models.h3ZoneStats import H3ZoneStats
@@ -13,10 +13,7 @@ from src.backend.app.db.models.enums import OrderStatus
 class H3ZoneStatsDao:
 
     @staticmethod
-    async def get_by_h3_index(
-        session: AsyncSession,
-        h3_index: str
-    ) -> Optional[H3ZoneStats]:
+    async def get_by_h3_index(session: AsyncSession, h3_index: str) -> Optional[H3ZoneStats]:
         result = await session.execute(
             select(H3ZoneStats).where(H3ZoneStats.h3_index == h3_index)
         )
@@ -29,22 +26,16 @@ class H3ZoneStatsDao:
             offset: Optional[int] = None
     ) -> Sequence[H3ZoneStats]:
         query = (
-            select(H3ZoneStats).order_by(H3ZoneStats.h3_index)
+            select(H3ZoneStats)
+            .order_by(H3ZoneStats.h3_index)
+            .limit(limit or 50)
+            .offset(offset or 0)
         )
-        if limit is None:
-            limit = 50
-        if offset is None:
-            offset = 0
-        query = query.limit(limit).offset(offset)
-
         result = await session.execute(query)
         return result.scalars().all()
 
     @staticmethod
-    async def get_or_create(
-        session: AsyncSession,
-        h3_index: str
-    ) -> H3ZoneStats:
+    async def get_or_create(session: AsyncSession, h3_index: str) -> H3ZoneStats:
         zone = await H3ZoneStatsDao.get_by_h3_index(session, h3_index)
         if zone is None:
             zone = H3ZoneStats(h3_index=h3_index)
@@ -53,33 +44,29 @@ class H3ZoneStatsDao:
         return zone
 
     @staticmethod
-    async def recompute_zone(
-        session: AsyncSession,
-        h3_index: str
-    ) -> H3ZoneStats:
-
-        total_result = await session.execute(
-            select(func.count(Order.id))
+    async def recompute_zone(session: AsyncSession, h3_index: str) -> H3ZoneStats:
+        """
+        Было: 4 отдельных SELECT (total, completed, avg_price, active_specialists).
+        Стало: 2 запроса — один для статистики заказов, один для специалистов.
+        """
+        # 1 запрос: total, completed, avg_price по заказам зоны
+        order_stats = await session.execute(
+            select(
+                func.count(Order.id).label("total_orders"),
+                func.count(
+                    case((Order.status == OrderStatus.completed, Order.id))
+                ).label("completed_orders"),
+                func.coalesce(func.avg(Order.price), 0.0).label("avg_price"),
+            )
             .join(Specialist, Specialist.id == Order.specialist_id)
             .where(Specialist.h3_index == h3_index)
         )
-        total_orders: int = total_result.scalar_one() or 0
+        row = order_stats.one()
+        total_orders: int = row.total_orders or 0
+        completed_orders: int = row.completed_orders or 0
+        avg_price: float = round(float(row.avg_price or 0.0), 2)
 
-        completed_result = await session.execute(
-            select(func.count(Order.id))
-            .join(Specialist, Specialist.id == Order.specialist_id)
-            .where(Specialist.h3_index == h3_index)
-            .where(Order.status == OrderStatus.completed)
-        )
-        completed_orders: int = completed_result.scalar_one() or 0
-
-        avg_result = await session.execute(
-            select(func.avg(Order.price))
-            .join(Specialist, Specialist.id == Order.specialist_id)
-            .where(Specialist.h3_index == h3_index)
-        )
-        avg_price: float = round(float(avg_result.scalar_one() or 0.0), 2)
-
+        # 2 запрос: активные верифицированные специалисты
         specialists_result = await session.execute(
             select(func.count(Specialist.id))
             .where(Specialist.h3_index == h3_index)

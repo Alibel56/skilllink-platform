@@ -1,19 +1,10 @@
-import uuid
-
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.backend.app.core.dependencies import (
-    get_current_user,
-    require_any
-)
-from src.backend.app.db.models import OrderRequest
-from src.backend.app.db.models.enums import ServiceType, LogType
+from src.backend.app.core.dependencies import get_current_user, require_any
 from src.backend.app.db.models.user import User
 from src.backend.app.db.session import get_session
-from src.backend.app.schemas.OrderRequestsSchema import OrderRequestCreate
 from src.backend.app.schemas.UserSchema import UserUpdate, UserDto
-from src.backend.app.services.OrderRequestsService import OrderRequestsService
 from src.backend.app.services.UserService import UserService
 
 router = APIRouter(
@@ -27,12 +18,10 @@ router = APIRouter(
 # =========================
 @router.get("/profile", response_model=UserDto)
 async def get_me(
-    request: Request,
-    session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    user = await UserService.get_by_id(session, current_user.id)
-    return user
+    # current_user уже загружен в get_current_user — не делаем второй запрос
+    return current_user
 
 
 # =========================
@@ -45,13 +34,8 @@ async def update_user(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(require_any)
 ):
-    user = await UserService.get_by_id(session, current_user.id)
-
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    updated_user = await UserService.update(session, user, data)
-
+    # current_user уже загружен — передаём напрямую, не перезагружаем по id
+    updated_user = await UserService.update(session, current_user, data)
     return updated_user
 
 
@@ -64,11 +48,5 @@ async def delete_user(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(require_any)
 ):
-    user = await UserService.get_by_id(session, current_user.id)
-
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    await UserService.delete(session, user)
-
+    await UserService.delete(session, current_user)
     return {"message": "User deleted"}

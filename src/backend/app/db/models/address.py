@@ -25,6 +25,5 @@ class Address(SQLModel, table=True):
 
     # Relationships
     user: Optional["User"] = Relationship(
-        back_populates="address",
-        sa_relationship_kwargs={"lazy": "selectin"}
+        back_populates="address"
     )

@@ -23,8 +23,5 @@ class Accreditation(SQLModel, table=True):
         nullable=False
     )
 
-    # Relationships
-    specialist: Optional["Specialist"] = Relationship(
-        back_populates="accreditations",
-        sa_relationship_kwargs={"lazy": "selectin"}
-    )
+    # Без eager load — PDF данные не грузятся при загрузке Specialist.
+    specialist: Optional["Specialist"] = Relationship(back_populates="accreditations")

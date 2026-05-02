@@ -7,9 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.backend.app.core.dependencies import (
     require_admin,
     require_specialist,
-    require_client, get_current_user
+    require_client,
 )
-
 from src.backend.app.db.models.user import User
 from src.backend.app.db.session import get_session
 from src.backend.app.schemas.SpecialistSchema import SpecialistCreate, SpecialistUpdate, SpecialistDto
@@ -20,9 +19,6 @@ router = APIRouter(
     tags=["Specialists"]
 )
 
-# =========================
-# CREATE SPECIALIST
-# =========================
 @router.post("/create", response_model=SpecialistDto)
 async def create_specialist(
     request: Request,
@@ -35,12 +31,9 @@ async def create_specialist(
         user_id=current_user.id,
         data=data
     )
-
     return specialist
 
-# =========================
-# GET SPECIALIST BY ID
-# =========================
+
 @router.get("/get/{specialist_id}", response_model=SpecialistDto)
 async def get_specialist(
     specialist_id: uuid.UUID,
@@ -49,16 +42,11 @@ async def get_specialist(
     current_user: User = Depends(require_client)
 ):
     specialist = await SpecialistService.get_by_id(session, specialist_id)
-
     if not specialist:
         raise HTTPException(status_code=404, detail="Specialist not found")
-
     return specialist
 
 
-# =========================
-# UPDATE SPECIALIST
-# =========================
 @router.put("/update", response_model=SpecialistDto)
 async def update_specialist(
     data: SpecialistUpdate,
@@ -67,18 +55,11 @@ async def update_specialist(
     current_user: User = Depends(require_specialist)
 ):
     specialist = await SpecialistService.get_by_user_id(session, current_user.id)
-
     if not specialist:
         raise HTTPException(status_code=404, detail="Specialist not found")
-
-    updated_specialist = await SpecialistService.update(session, specialist, data)
-
-    return updated_specialist
+    return await SpecialistService.update(session, specialist, data)
 
 
-# =========================
-# DEACTIVATE SPECIALIST
-# =========================
 @router.patch("/deactivate/{specialist_id}", response_model=SpecialistDto)
 async def deactivate_specialist(
     specialist_id: uuid.UUID,
@@ -89,15 +70,9 @@ async def deactivate_specialist(
     specialist = await SpecialistService.get_by_id(session, specialist_id)
     if not specialist:
         raise HTTPException(status_code=404, detail="Specialist not found")
-
-    result = await SpecialistService.deactivate(session, specialist)
-
-    return result
+    return await SpecialistService.deactivate(session, specialist)
 
 
-# =========================
-# DELETE SPECIALIST
-# =========================
 @router.delete("/delete", response_model=dict[str, str])
 async def delete_specialist(
     request: Request,
@@ -105,18 +80,12 @@ async def delete_specialist(
     current_user: User = Depends(require_specialist)
 ):
     specialist = await SpecialistService.get_by_user_id(session, current_user.id)
-
     if not specialist:
         raise HTTPException(status_code=404, detail="Specialist not found")
-
     await SpecialistService.delete(session, specialist)
-
     return {"message": "Specialist deleted"}
 
 
-# =========================
-# VERIFY SPECIALIST
-# =========================
 @router.patch("/verify/{specialist_id}", response_model=SpecialistDto)
 async def verify_specialist(
     specialist_id: uuid.UUID,
@@ -125,18 +94,11 @@ async def verify_specialist(
     current_user: User = Depends(require_admin)
 ):
     specialist = await SpecialistService.get_by_id(session, specialist_id)
-
     if not specialist:
         raise HTTPException(status_code=404, detail="Specialist not found")
-
-    result = await SpecialistService.verify(session, specialist)
-
-    return result
+    return await SpecialistService.verify(session, specialist)
 
 
-# =========================
-# FIND SPECIALISTS NEARBY
-# =========================
 @router.get("/search", response_model=list[SpecialistDto])
 async def find_specialists_nearby(
     lat: float,
@@ -156,5 +118,4 @@ async def find_specialists_nearby(
         job_type=job_type,
         max_price=max_price
     )
-
     return specialists

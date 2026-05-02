@@ -9,7 +9,7 @@ from src.backend.app.core.dependencies import (
     require_specialist,
     require_any
 )
-from src.backend.app.db.models.enums import ServiceType, OrderStatus, LogType
+from src.backend.app.db.models.enums import OrderStatus
 from src.backend.app.db.models.user import User
 from src.backend.app.db.session import get_session
 from src.backend.app.exceptions.Base import NotFoundException, ForbiddenException
@@ -127,7 +127,6 @@ async def complete_order(
         raise NotFoundException("Order not found")
     if order.user_id != current_user.id:
         raise ForbiddenException("Not allowed to complete this order")
-
     result = await OrderService.complete_order(session, order, current_user.id)
     return {"message": f"Order completed at {result.completed_at}"}
 
@@ -143,7 +142,6 @@ async def cancel_order(
         raise NotFoundException("Order not found")
     if order.user_id != current_user.id:
         raise ForbiddenException("Not allowed to cancel this order")
-
     await OrderService.cancel_order(session, order, current_user.id)
     return {"message": "Order cancelled successfully"}
 
@@ -159,6 +157,5 @@ async def delete_order(
         raise NotFoundException("Order not found")
     if order.user_id != current_user.id:
         raise ForbiddenException("Not allowed to delete this order")
-
     await OrderService.delete(session, order)
     return {"message": "Order deleted"}

@@ -3,6 +3,7 @@ from typing import Optional, Sequence
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from sqlmodel import col
 
 from src.backend.app.dao.UserDao import UserDao
@@ -15,14 +16,12 @@ class SpecialistDao:
 
     @staticmethod
     async def create(session: AsyncSession, specialist: Specialist) -> Specialist:
-
         session.add(specialist)
         await session.execute(
             update(User)
             .where(User.id == specialist.user_id)
             .values(role=UserRole.specialist)
         )
-
         await session.flush()
         return specialist
 
@@ -32,23 +31,26 @@ class SpecialistDao:
             limit: Optional[int] = None,
             offset: Optional[int] = None
     ) -> Sequence[Specialist]:
-        query = (
-            select(Specialist)
-            .order_by(Specialist.user_id)
-        )
-        if limit is None:
-            limit = 50
-        if offset is None:
-            offset = 0
-        query = query.limit(limit).offset(offset)
-
+        query = select(Specialist).order_by(Specialist.user_id)
+        query = query.limit(limit or 50).offset(offset or 0)
         result = await session.execute(query)
         return result.scalars().all()
 
     @staticmethod
     async def get_by_id(session: AsyncSession, specialist_id: uuid.UUID) -> Optional[Specialist]:
+        """Голый Specialist без связей."""
         result = await session.execute(
             select(Specialist).where(Specialist.id == specialist_id)
+        )
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def get_by_id_with_catalog(session: AsyncSession, specialist_id: uuid.UUID) -> Optional[Specialist]:
+        """Specialist + catalog — для страниц профиля специалиста."""
+        result = await session.execute(
+            select(Specialist)
+            .options(selectinload(Specialist.catalog))
+            .where(Specialist.id == specialist_id)
         )
         return result.scalar_one_or_none()
 
@@ -70,7 +72,6 @@ class SpecialistDao:
     async def update(session: AsyncSession, specialist: Specialist, update_data) -> Specialist:
         for field, value in update_data.items():
             setattr(specialist, field, value)
-
         await session.flush()
         return specialist
 
@@ -110,7 +111,6 @@ class SpecialistDao:
                 .join(Catalog, Catalog.specialist_id == Specialist.id)
                 .where(Catalog.job_type == job_type)
             )
-
         if max_price:
             if not job_type:
                 query = query.join(Catalog, Catalog.specialist_id == Specialist.id)

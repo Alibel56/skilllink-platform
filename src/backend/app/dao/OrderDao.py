@@ -2,38 +2,32 @@ import uuid
 from datetime import datetime, timezone
 from typing import Sequence, Optional
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.backend.app.db.models.enums import OrderStatus
 from src.backend.app.db.models.orders import Order
 
+
 class OrderDao:
 
     @staticmethod
-    async def create(
-            session: AsyncSession,
-            order: Order
-    ) -> Order:
+    async def create(session: AsyncSession, order: Order) -> Order:
         session.add(order)
         await session.flush()
         return order
 
     @staticmethod
-    async def get_by_id(
-        session: AsyncSession,
-        order_id: uuid.UUID
-    ) -> Optional[Order]:
+    async def get_by_id(session: AsyncSession, order_id: uuid.UUID) -> Optional[Order]:
+        """Голый Order — для проверок прав и статуса."""
         result = await session.execute(
             select(Order).where(Order.id == order_id)
         )
         return result.scalars().first()
 
     @staticmethod
-    async def get_user_orders(
-        session: AsyncSession,
-        user_id: uuid.UUID
-    ) -> Sequence[Order]:
+    async def get_user_orders(session: AsyncSession, user_id: uuid.UUID) -> Sequence[Order]:
         result = await session.execute(
             select(Order)
             .where(Order.is_active == True)
@@ -53,13 +47,9 @@ class OrderDao:
             .where(Order.is_active == True)
             .where(Order.status == OrderStatus.open)
             .order_by(Order.created_at.desc())
+            .limit(limit or 50)
+            .offset(offset or 0)
         )
-        if limit is None:
-            limit = 50
-        if offset is None:
-            offset = 0
-        query = query.limit(limit).offset(offset)
-
         result = await session.execute(query)
         return result.scalars().all()
 
@@ -76,10 +66,7 @@ class OrderDao:
         return result.scalars().all()
 
     @staticmethod
-    async def get_by_id_for_update(
-            session: AsyncSession,
-            order_id: uuid.UUID
-    ) -> Optional[Order]:
+    async def get_by_id_for_update(session: AsyncSession, order_id: uuid.UUID) -> Optional[Order]:
         result = await session.execute(
             select(Order).where(Order.id == order_id).with_for_update()
         )
@@ -98,14 +85,9 @@ class OrderDao:
         return result.scalars().first()
 
     @staticmethod
-    async def update(
-            session: AsyncSession,
-            order: Order,
-            update_data
-    ) -> Order:
+    async def update(session: AsyncSession, order: Order, update_data) -> Order:
         for field, value in update_data.items():
             setattr(order, field, value)
-
         await session.flush()
         return order
 
@@ -121,12 +103,7 @@ class OrderDao:
         await session.flush()
 
     @staticmethod
-    async def take_order(
-        session: AsyncSession,
-        order: Order,
-        specialist_id: uuid.UUID
-    ) -> Order:
-
+    async def take_order(session: AsyncSession, order: Order, specialist_id: uuid.UUID) -> Order:
         order.specialist_id = specialist_id
         order.status = OrderStatus.in_progress
         await session.flush()
@@ -141,10 +118,7 @@ class OrderDao:
         return order
 
     @staticmethod
-    async def cancel_order(
-        session: AsyncSession,
-        order: Order
-    ) -> Order:
+    async def cancel_order(session: AsyncSession, order: Order) -> Order:
         order.status = OrderStatus.cancelled
         order.is_active = False
         await session.flush()

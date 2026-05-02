@@ -17,7 +17,7 @@ class Order(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(foreign_key="users.id")
-    specialist_id: Optional[uuid.UUID] = Field(default=None, foreign_key="specialist.id")  # nullable, clients create order by themselves
+    specialist_id: Optional[uuid.UUID] = Field(default=None, foreign_key="specialist.id")
     job_type: str
     description: Optional[str] = None
     price: float
@@ -34,23 +34,8 @@ class Order(SQLModel, table=True):
         nullable=True
     )
 
-    # Relationships
-    user: Optional["User"] = Relationship(
-        back_populates="orders",
-        sa_relationship_kwargs={"lazy": "selectin"}
-    )
-
-    specialist: Optional["Specialist"] = Relationship(
-        back_populates="orders",
-        sa_relationship_kwargs={"lazy": "selectin"}
-    )
-
-    messages: list["Message"] = Relationship(
-        back_populates="orders",
-        sa_relationship_kwargs={"lazy": "selectin"}
-    )
-
-    order_requests: list["OrderRequest"] = Relationship(
-        back_populates="orders",
-        sa_relationship_kwargs={"lazy": "selectin"}
-    )
+    # Без selectin — подгружается явно в DAO.
+    user: Optional["User"] = Relationship(back_populates="orders")
+    specialist: Optional["Specialist"] = Relationship(back_populates="orders")
+    messages: list["Message"] = Relationship(back_populates="orders")
+    order_requests: list["OrderRequest"] = Relationship(back_populates="orders")
