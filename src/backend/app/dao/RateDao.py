@@ -42,6 +42,16 @@ class RateDao:
         return result.scalar_one_or_none()
 
     @staticmethod
+    async def list_for_specialist(
+        session: AsyncSession,
+        specialist_id: uuid.UUID,
+    ) -> Sequence[Rate]:
+        result = await session.execute(
+            select(Rate).where(Rate.specialist_id == specialist_id)
+        )
+        return result.scalars().all()
+
+    @staticmethod
     async def delete(
         session: AsyncSession,
         rate: Rate

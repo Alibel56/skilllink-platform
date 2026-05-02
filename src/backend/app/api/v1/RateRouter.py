@@ -3,7 +3,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.backend.app.core.dependencies import require_client
+from src.backend.app.core.dependencies import require_client, require_any
 from src.backend.app.db.models.user import User
 from src.backend.app.db.session import get_session
 from src.backend.app.schemas.RateSchema import RateCreate, RateDto
@@ -27,15 +27,17 @@ async def rate_specialist(
     return await RateService.create(session, current_user.id, specialist_id, data)
 
 
-@router.get("/get/rate/{specialist_id}", response_model=dict[str, str])
-async def get_specialist_avg_rate(
+@router.get("/get/rate/{specialist_id}", response_model=list[RateDto])
+async def list_specialist_rates(
     specialist_id: uuid.UUID,
     request: Request,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(require_client)
+    current_user: User = Depends(require_any),
 ):
-    item = await RateService.get_specialist_avg_rate(session, specialist_id)
-    return {"message": f"Specialist AVG rate: {item}"}
+    """Returns all individual rates for a specialist; the frontend computes
+    the average. require_any so a specialist can also view another specialist's
+    profile."""
+    return await RateService.list_for_specialist(session, specialist_id)
 
 
 @router.delete("/delete/{specialist_id}", response_model=dict[str, str])

@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.app.core.dependencies import (
-    require_client
+    require_client,
+    require_any,
 )
 from src.backend.app.db.models.user import User
 from src.backend.app.db.session import get_session
@@ -60,7 +61,7 @@ async def get_specialist_comments(
         limit: Optional[int] = None,
         offset: Optional[int] = None,
         session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(require_client)
+        current_user: User = Depends(require_any),
 ):
     specialist = await SpecialistService.get_by_id(session, specialist_id)
 

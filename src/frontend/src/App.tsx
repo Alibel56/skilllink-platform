@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-store';
 import { AuthLayout } from '@/components/layout/auth-layout';
 import { AppShell } from '@/components/layout/app-shell';
 import { ProtectedRoute } from '@/components/protected-route';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 import LoginPage from '@/routes/auth/login';
 import SignupPage from '@/routes/auth/signup';
@@ -39,6 +40,7 @@ function RootRedirect() {
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BrowserRouter>
@@ -89,5 +91,6 @@ export default function App() {
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

@@ -51,3 +51,10 @@ class RateService:
         result = await RateDao.get_user_rate(session, user_id, specialist_id)
         return result
 
+    @staticmethod
+    async def list_for_specialist(
+        session: AsyncSession,
+        specialist_id: uuid.UUID,
+    ):
+        return await RateDao.list_for_specialist(session, specialist_id)
+

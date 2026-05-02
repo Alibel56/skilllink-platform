@@ -37,23 +37,29 @@ export default function SpecialistProfilePage() {
     enabled: !!specialistId,
   });
 
-  const { data: items = [] } = useQuery<CatalogDto[]>({
+  const { data: itemsRaw } = useQuery<CatalogDto[]>({
     queryKey: ['catalog', specialistId],
     queryFn: () => catalogApi.get(specialistId),
     enabled: !!specialistId,
   });
+  const items: CatalogDto[] = Array.isArray(itemsRaw) ? itemsRaw : [];
 
-  const { data: commentsData = [] } = useQuery<CommentDto[]>({
+  const { data: commentsRaw } = useQuery<CommentDto[]>({
     queryKey: ['comments', specialistId],
     queryFn: () => comments.list(specialistId),
     enabled: !!specialistId,
   });
+  const commentsData: CommentDto[] = Array.isArray(commentsRaw) ? commentsRaw : [];
 
-  const { data: ratesData = [] } = useQuery<RateDto[]>({
+  const { data: ratesRaw } = useQuery<RateDto[]>({
     queryKey: ['rates', specialistId],
     queryFn: () => rates.list(specialistId),
     enabled: !!specialistId,
   });
+  // Guard against backends that return {message: ...} instead of an array —
+  // before this guard a single bad response crashed the whole React tree
+  // (`ratesData.reduce is not a function` -> white screen).
+  const ratesData: RateDto[] = Array.isArray(ratesRaw) ? ratesRaw : [];
 
   const avgRate =
     ratesData.length > 0
