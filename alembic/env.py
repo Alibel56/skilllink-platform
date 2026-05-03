@@ -12,9 +12,6 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# URL берётся из переменной окружения DATABASE_URL_SYNC
-# Локальный postgres: postgresql://skilllink:skilllink_secret@localhost:5432/skilllink
-# Supabase:           postgresql://...@pooler.supabase.com:6543/postgres
 db_url = os.environ.get("DATABASE_URL_SYNC")
 if not db_url:
     raise RuntimeError("DATABASE_URL_SYNC environment variable is not set")
